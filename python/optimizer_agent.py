@@ -32,6 +32,7 @@ class PerformanceOutlook(BaseModel):
 
 
 class OptimizerLLMOutput(BaseModel):
+    executive_summary: str
     key_insight: str
     final_verdict: FinalVerdict
     execution_plan: ExecutionPlan
@@ -98,6 +99,15 @@ def run_optimizer_agent(
         "PERFORMANCE OUTLOOK RULE:\n"
         "* performance_outlook.reason must explain causally why potential is high/low.\n"
         "* Reference competition level and observed patterns from the analyst/strategist context.\n\n"
+        "EXECUTIVE SUMMARY RULE:\n"
+        "* executive_summary must be exactly 1-2 punchy sentences summarizing the verdict and the required action.\n"
+        "* If decision is GO: Frame it as 'Here is your opportunity and exactly how to take it.'\n"
+        "* If decision is MODIFY: Frame it as 'Strong idea, wrong angle. Here is the specific shift that changes everything.'\n"
+        "* If decision is AVOID: Frame it as 'We strongly advise against this idea due to market conditions. However, if you are absolutely forced to make this video, here is your only survival strategy.'\n\n"
+        "AVOID VERDICT RULE:\n"
+        "* If your decision is AVOID, you MUST STILL generate a complete and brilliant execution_plan.\n"
+        "* Frame the execution plan as a 'Risk Mitigation' or 'Survival' strategy.\n"
+        "* The execution plan must represent the absolute best-case scenario for a fundamentally bad idea.\n\n"
         "KEY INSIGHT:\n"
         "* key_insight must be exactly 1 line and feel like a premium, memorable summary.\n\n"
         "WHY THIS WILL WORK:\n"
@@ -168,6 +178,7 @@ def run_optimizer_agent(
     except Exception:
         traceback.print_exc()
         result = {
+            "executive_summary": "System overloaded. Please try again.",
             "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
             "final_verdict": {
                 "decision": "MODIFY",
@@ -218,6 +229,7 @@ def run_optimizer_agent(
         except Exception:
             traceback.print_exc()
             result = {
+                "executive_summary": "System parsing failed. Please try again.",
                 "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
                 "final_verdict": {
                     "decision": "MODIFY",
@@ -256,7 +268,6 @@ def run_optimizer_agent(
         if "NO" in analyst_win and decision == "GO":
             result["final_verdict"]["decision"] = "MODIFY"
             result["final_verdict"]["reason"] = "Adjusted because analyst flagged low feasibility."
-            result["is_reliable"] = False
 
     # Failure escalation system
     if not result.get("is_reliable", True):
