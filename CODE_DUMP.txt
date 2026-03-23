@@ -1,0 +1,1833 @@
+# CODE DUMP
+# Regenerated from repository files.
+# Skips any .env* files and common cache/build directories.
+
+# ===== FILE: D:/YtAdvisor.ai/.gitignore =====
+# Environment files
+.env
+.env.*
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# ===== END FILE: D:/YtAdvisor.ai/.gitignore =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/__init__.py =====
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/__init__.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/_check.py =====
+import py_compile, sys
+files = ["analyst_agent.py", "strategist_agent.py", "optimizer_agent.py", "llm_service.py", "youtube_service.py", "main.py"]
+ok = True
+for f in files:
+    try:
+        py_compile.compile(f, doraise=True)
+        print(f"OK: {f}")
+    except py_compile.PyCompileError as e:
+        print(f"ERROR: {f}: {e}")
+        ok = False
+if ok:
+    print("ALL FILES COMPILE OK")
+else:
+    print("SOME FILES HAVE ERRORS")
+
+# ===== END FILE: D:/YtAdvisor.ai/python/_check.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/analyst_agent.py =====
+import json
+import time
+import traceback
+from typing import Any, Dict, List, Optional
+
+import google.generativeai as genai
+from pydantic import BaseModel
+
+from creator_profile import DerivedCreatorProfile
+import llm_service
+
+
+class CanSmallCreatorWin(BaseModel):
+    verdict: str  # "YES / HARD / NO"
+    confidence: str  # "LOW / MEDIUM / HIGH"
+
+
+class AnalystAgentOutput(BaseModel):
+    market_truth: str
+    dominant_force: str
+    opportunity: str
+    risk: str
+    content_gaps: List[str]
+    can_small_creator_win: CanSmallCreatorWin
+    reasoning: str
+
+
+def run_analyst_agent(
+    idea: str,
+    features: dict,
+    creator_profile: Optional[DerivedCreatorProfile],
+    is_monopoly: bool = False,
+    is_personality: bool = False,
+    is_fragmented: bool = False,
+) -> dict:
+    print("[analyst] starting...")
+    t0 = time.monotonic()
+
+    creator_mode = "generic"
+    subscriber_count = None
+    channel_size_bucket = "small"
+    growth_stage = "early"
+    competition_tolerance = "low"
+    performance_ratio = 0.0
+
+    if creator_profile is not None:
+        creator_mode = creator_profile.mode
+        subscriber_count = creator_profile.subscriber_count
+        channel_size_bucket = creator_profile.channel_size_bucket
+        growth_stage = creator_profile.growth_stage
+        competition_tolerance = creator_profile.competition_tolerance
+        performance_ratio = creator_profile.performance_ratio
+
+    system_prompt = (
+        "You are a YouTube market analyst.\n\n"
+        "Your job is to:\n"
+        "* Understand the competitive landscape\n"
+        "* Identify real opportunities\n"
+        "* Detect risks\n\n"
+        "STRICT RULES:\n"
+        "* Do NOT generate titles or creative ideas\n"
+        "* Do NOT give generic advice\n"
+        "* Base your reasoning ONLY on provided data\n"
+        "* Be sharp, specific, and slightly brutal\n"
+        "* market_truth must be 1-2 lines max and MUST include:\n"
+        "  - who dominates\n"
+        "  - what works\n"
+        "  - what fails\n"
+        "* content_gaps must be specific and actionable (no generic placeholders)\n"
+        "* Output must match the final JSON format exactly.\n\n"
+        "FINAL JSON FORMAT (STRICT):\n"
+        "{\n"
+        '  "market_truth": "...",\n'
+        '  "dominant_force": "...",\n'
+        '  "opportunity": "...",\n'
+        '  "risk": "...",\n'
+        '  "content_gaps": ["..."],\n'
+        '  "can_small_creator_win": {\n'
+        '    "verdict": "YES / HARD / NO",\n'
+        '    "confidence": "LOW / MEDIUM / HIGH"\n'
+        "  },\n"
+        '  "reasoning": "..." \n'
+        "}"
+    )
+
+    # Add transcript sample if available
+    transcript_sample = features.get("transcript_sample", "")
+
+    breakout_summary = features.get("breakout_summary")
+    creator_distribution = features.get("creator_distribution")
+    title_patterns = features.get("title_patterns")
+    content_clusters = features.get("content_clusters")
+    freshness = features.get("freshness")
+    velocity_metrics = features.get("velocity_metrics")
+    market_summary = features.get("market_summary", {}) or {}
+    entry_barrier = market_summary.get("entry_barrier")
+    competition_level = market_summary.get("competition_level")
+
+    user_prompt = (
+        f"Idea:\n{idea}\n\n"
+        "Market Signals:\n"
+        f"* Breakout Summary: {breakout_summary}\n"
+        f"* Creator Distribution: {creator_distribution}\n"
+        f"* Title Patterns: {title_patterns}\n"
+        f"* Content Clusters: {content_clusters}\n"
+        f"* Freshness: {freshness}\n"
+        f"* Velocity Metrics: {velocity_metrics}\n"
+        f"* Consistency: {features.get('consistency')}\n"
+        f"* Market Dynamics: {features.get('market_dynamics')}\n"
+        f"* Anomaly Signals: MONOPOLY={is_monopoly}, PERSONALITY_DRIVEN={is_personality}, FRAGMENTED={is_fragmented}\n\n"
+        "TRANSCRIPT ANALYSIS:\n"
+        f"- Hook Style: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('hook_style', 'Unknown')}\n"
+        f"- Pacing: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('pacing', 'Unknown')}\n"
+        f"- Tone: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('tone', 'Unknown')}\n\n"
+        "CRITICAL SIGNALS:\n"
+        f"- Entry Barrier: {entry_barrier}\n"
+        f"- Competition Level: {competition_level}\n\n"
+        "IMPORTANT SIGNAL INTERPRETATION RULES:\n"
+        "CRITICAL SIGNALS MUST BE CONSIDERED:\n"
+        "- Entry Barrier: HIGH = extremely difficult for new creators\n"
+        "- Competition Level: HIGH = dominated by established players\n"
+        "\n"
+        "DETAILED RULES:\n"
+        "- If Market Summary.entry_barrier = 'HIGH' -> assume difficult for small creators.\n"
+        "- If creator_distribution.small_creator_success_rate = 'LOW' -> assume low breakout chances.\n"
+        "- If Freshness.trend_status = 'STALE' -> assume the trend is declining.\n"
+        "- If breakout_summary.distribution.viral is low (e.g., 0-1) -> assume low upside.\n"
+        "- If velocity_metrics.avg_views_per_day < 1000 -> assume low engagement potential.\n"
+        "- If velocity_metrics.top_vs_avg_ratio > 10 -> assume winner-takes-all market.\n"
+        "- If velocity_metrics.avg_title_length > 60 -> assume clickbait-heavy niche.\n"
+        "- If consistency.consistency = 'HIGH' -> stable market, predictable performance\n"
+        "- If consistency.consistency = 'LOW' -> volatile market, high risk/reward\n"
+        "- If market_dynamics = 'WINNER_TAKES_ALL' -> dominated by top players\n"
+        "- If market_dynamics = 'VOLATILE' -> unpredictable performance swings\n"
+        "- If market_dynamics = 'STABLE' -> predictable performance patterns\n"
+        "- If transcript_analysis.hook_style = 'sensational' → high engagement but low retention\n"
+        "- If transcript_analysis.pacing = 'fast' → appeals to shorter attention spans\n"
+        "- If transcript_analysis.tone = 'direct_address' → builds stronger connection\n"
+        "- If MONOPOLY=True -> market dominated by few players, entry is extremely hard.\n"
+        "- If PERSONALITY_DRIVEN=True -> success depends on personal brand, not content quality.\n"
+        "- If FRAGMENTED=True -> many small players, opportunity exists if you differentiate.\n"
+        "Use these signals STRICTLY in your reasoning.\n\n"
+        "Creator Context:\n"
+        f"* Mode: {creator_mode}\n"
+        f"* Subscribers: {subscriber_count}\n"
+        f"* Channel Size: {channel_size_bucket}\n"
+        f"* Growth Stage: {growth_stage}\n"
+        f"* Performance Ratio: {performance_ratio}\n"
+        f"* Competition Tolerance: {competition_tolerance}\n"
+        "\n"
+        "CREATOR PROFILE ADJUSTMENT RULES:\n"
+        "- If performance_ratio is low (<0.1) → prioritize safer, proven ideas\n"
+        "- If growth_stage is 'early' → avoid high competition niches\n"
+        "- If channel_size_bucket is 'small' → focus on differentiation, not volume\n"
+        "- If competition_tolerance is 'low' → avoid saturated markets\n"
+        "Apply these rules to your analysis."
+    )
+
+    model = genai.GenerativeModel(
+        llm_service._MODEL_NAME,  # reuse existing model name
+        system_instruction=system_prompt,
+    )
+    try:
+        response = llm_service.generate_content_with_timeout(
+            model,
+            user_prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.7,
+                response_mime_type="application/json",
+                response_schema=AnalystAgentOutput,
+            ),
+            timeout_s=90,
+        )
+    except Exception:
+        traceback.print_exc()
+        result = {
+            "market_truth": "Unknown",
+            "dominant_force": "Unknown",
+            "opportunity": "Insufficient signals to judge.",
+            "risk": "Risk cannot be assessed.",
+            "content_gaps": [],
+            "can_small_creator_win": {"verdict": "HARD", "confidence": "LOW"},
+            "reasoning": "LLM request timed out or failed.",
+        }
+        print({
+            "stage": "analyst",
+            "idea": idea,
+            "output": result,
+        })
+        print(f"[analyst] done in {time.monotonic() - t0:.1f}s")
+        return result
+
+    raw_text = response.text or ""
+
+    try:
+        parsed = llm_service._parse(raw_text, AnalystAgentOutput)
+        result = parsed.model_dump()
+    except Exception:
+        traceback.print_exc()
+        # Fallback: attempt a simple JSON extraction; otherwise return safe defaults.
+        try:
+            start = raw_text.find("{")
+            end = raw_text.rfind("}")
+            obj = json.loads(raw_text[start : end + 1])
+            result = AnalystAgentOutput.model_validate(obj).model_dump()
+        except Exception:
+            traceback.print_exc()
+            result = {
+                "market_truth": "Unknown",
+                "dominant_force": "Unknown",
+                "opportunity": "Insufficient signals to judge.",
+                "risk": "Risk cannot be assessed.",
+                "content_gaps": [],
+                "can_small_creator_win": {"verdict": "HARD", "confidence": "LOW"},
+                "reasoning": "LLM output could not be parsed reliably.",
+            }
+
+    print({
+        "stage": "analyst",
+        "idea": idea,
+        "output": result
+    })
+    print(f"[analyst] done in {time.monotonic() - t0:.1f}s")
+    return result
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/analyst_agent.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/creator_profile.py =====
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+
+class CreatorProfile(BaseModel):
+    channel_id: Optional[str]
+    niche: Optional[str]
+    subscriber_count: Optional[int]
+    avg_views: Optional[int]
+    recent_videos: Optional[List[str]] = Field(default_factory=list)
+
+
+class DerivedCreatorProfile(BaseModel):
+    mode: str  # "generic" or "personalized"
+
+    # raw
+    subscriber_count: Optional[int]
+    avg_views: Optional[int]
+    niche: Optional[str]
+
+    # derived
+    channel_size_bucket: str  # "small", "growing", "large"
+    growth_stage: str  # "early", "mid", "established"
+    performance_ratio: float  # avg_views / subs (safe division)
+    competition_tolerance: str  # low / medium / high
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/creator_profile.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/creator_profile_service.py =====
+from typing import Optional
+
+from creator_profile import CreatorProfile, DerivedCreatorProfile
+
+
+def build_creator_profile(
+    input_profile: Optional[CreatorProfile],
+) -> DerivedCreatorProfile:
+    if input_profile is None or input_profile.subscriber_count is None:
+        return DerivedCreatorProfile(
+            mode="generic",
+            subscriber_count=None,
+            avg_views=None,
+            niche=None,
+            channel_size_bucket="small",
+            growth_stage="early",
+            performance_ratio=1.0,
+            competition_tolerance="low",
+        )
+
+    subs = input_profile.subscriber_count
+    avg_views = input_profile.avg_views if input_profile.avg_views is not None else 0
+
+    # SAFE division
+    if subs > 0:
+        performance_ratio = avg_views / subs
+    else:
+        performance_ratio = 0.0
+
+    # bucket logic (NO sharp jumps)
+    if subs < 3000:
+        bucket = "small"
+        stage = "early"
+    elif subs < 30000:
+        bucket = "growing"
+        stage = "mid"
+    else:
+        bucket = "large"
+        stage = "established"
+
+    if subs < 3000:
+        tolerance = "low"
+    elif subs < 30000:
+        tolerance = "medium"
+    else:
+        tolerance = "high"
+
+    performance_ratio = round(min(performance_ratio, 10), 2)
+
+    return DerivedCreatorProfile(
+        mode="personalized",
+        subscriber_count=subs,
+        avg_views=avg_views,
+        niche=input_profile.niche,
+        channel_size_bucket=bucket,
+        growth_stage=stage,
+        performance_ratio=performance_ratio,
+        competition_tolerance=tolerance,
+    )
+
+
+def is_personalized(profile: DerivedCreatorProfile) -> bool:
+    return profile.mode == "personalized"
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/creator_profile_service.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/data_feature_extractor.py =====
+from __future__ import annotations
+
+import re
+import statistics
+from collections import Counter
+from typing import Dict, List, Optional
+
+from models import VideoData
+
+
+STOPWORDS = {
+    "the",
+    "and",
+    "to",
+    "of",
+    "in",
+    "a",
+    "for",
+    "is",
+    "on",
+    "this",
+    "that",
+    "with",
+    "you",
+}
+
+
+def _clean_token(token: str) -> str:
+    token = token.lower()
+    # Keep letters/digits, drop leading/trailing punctuation.
+    token = re.sub(r"^[^a-z0-9]+|[^a-z0-9]+$", "", token)
+    return token
+
+
+def compute_breakout_summary(videos: List[VideoData]) -> Dict:
+    distribution = {"low": 0, "normal": 0, "high": 0, "viral": 0}
+
+    def classify(multiplier: float) -> str:
+        if multiplier < 1:
+            return "low"
+        if 1 <= multiplier < 2:
+            return "normal"
+        if 2 <= multiplier < 5:
+            return "high"
+        return "viral"
+
+    for v in videos:
+        distribution[classify(v.breakout_multiplier)] += 1
+
+    top_sorted = sorted(videos, key=lambda v: v.breakout_multiplier or 0, reverse=True)[
+        :3
+    ]
+    top_performers = [
+        {"title": v.title, "multiplier": round(float(v.breakout_multiplier), 2)}
+        for v in top_sorted
+    ]
+
+    return {
+        "distribution": distribution,
+        "top_performers": top_performers,
+    }
+
+
+def compute_creator_distribution(videos: List[VideoData]) -> Dict:
+    def bucket(subs: int) -> str:
+        if subs < 10_000:
+            return "small"
+        if subs <= 100_000:
+            return "mid"
+        return "large"
+
+    counts = {"small": 0, "mid": 0, "large": 0}
+
+    for v in videos:
+        subs = v.subscriber_count or 0
+        b = bucket(subs)
+        counts[b] += 1
+    total_breakout = sum(1 for v in videos if v.breakout_multiplier >= 2)
+    small_breakout = sum(
+        1
+        for v in videos
+        if v.breakout_multiplier >= 2 and (v.subscriber_count or 0) < 10_000
+    )
+
+    ratio = (small_breakout / total_breakout) if total_breakout > 0 else 0.0
+
+    if ratio < 0.3:
+        success = "LOW"
+    elif ratio < 0.6:
+        success = "MEDIUM"
+    else:
+        success = "HIGH"
+
+    return {
+        "small": counts["small"],
+        "mid": counts["mid"],
+        "large": counts["large"],
+        "small_creator_success_rate": success,
+    }
+
+
+def compute_title_patterns(videos: List[VideoData]) -> Dict:
+    keyword_counter: Counter[str] = Counter()
+    saw_how_any = False
+    saw_digit_any = False
+
+    for v in videos:
+        raw_tokens = v.title.lower().split()
+        cleaned_tokens: List[str] = []
+        for t in raw_tokens:
+            tok = _clean_token(t)
+            if not tok:
+                continue
+            cleaned_tokens.append(tok)
+            if tok == "how":
+                saw_how_any = True
+                continue
+            if tok.isdigit():
+                saw_digit_any = True
+                continue
+            if tok in STOPWORDS:
+                continue
+            if len(tok) < 3:
+                continue
+            keyword_counter[tok] += 1
+
+    top_keywords = [w for w, _ in keyword_counter.most_common(5)]
+
+    if saw_how_any:
+        dominant_pattern = "tutorial"
+    elif saw_digit_any:
+        dominant_pattern = "listicle"
+    else:
+        dominant_pattern = "generic"
+
+    return {
+        "top_keywords": top_keywords,
+        "dominant_pattern": dominant_pattern,
+    }
+
+
+def compute_content_clusters(videos: List[VideoData]) -> Dict:
+    beginner_keywords = ["beginner", "start", "basics", "intro"]
+    advanced_keywords = ["advanced", "deep", "expert"]
+
+    clusters = {"beginner": 0, "advanced": 0, "general": 0}
+
+    for v in videos:
+        raw_tokens = v.title.lower().split()
+        cleaned = {_clean_token(t) for t in raw_tokens if _clean_token(t)}
+
+        if any(k in cleaned for k in beginner_keywords):
+            clusters["beginner"] += 1
+        elif any(k in cleaned for k in advanced_keywords):
+            clusters["advanced"] += 1
+        else:
+            clusters["general"] += 1
+
+    weak_cluster = min(clusters.items(), key=lambda kv: kv[1])[0]
+    return {"clusters": clusters, "weak_cluster": weak_cluster}
+
+
+def compute_freshness(videos: List[VideoData]) -> Dict:
+    recent = sum(1 for v in videos if v.age_days < 90)
+    total = len(videos)
+    old = total - recent
+
+    recent_ratio = (recent / total) if total > 0 else 0.0
+    if recent_ratio > 0.4:
+        trend_status = "ACTIVE"
+    elif recent_ratio > 0.2:
+        trend_status = "MODERATE"
+    else:
+        trend_status = "STALE"
+
+    return {"recent": recent, "old": old, "trend_status": trend_status}
+
+
+def compute_velocity_metrics(videos: List[VideoData]) -> Dict:
+    if not videos:
+        return {
+            "avg_views_per_day": 0,
+            "avg_title_length": 0,
+            "top_vs_avg_ratio": 0,
+        }
+    
+    # Average views per day
+    total_views_per_day = 0
+    valid_videos = 0
+    
+    for v in videos:
+        if v.age_days and v.age_days > 0 and v.view_count:
+            total_views_per_day += v.view_count / v.age_days
+            valid_videos += 1
+    
+    avg_views_per_day = total_views_per_day / valid_videos if valid_videos > 0 else 0
+    
+    # Average title length
+    avg_title_length = sum(len(v.title.split()) for v in videos) / len(videos) if videos else 0
+    
+    # Top vs average ratio
+    if videos:
+        views = [v.view_count for v in videos if v.view_count]
+        if views:
+            top_views = max(views)
+            avg_views = sum(views) / len(views)
+            top_vs_avg_ratio = top_views / avg_views if avg_views > 0 else 0
+        else:
+            top_vs_avg_ratio = 0
+    else:
+        top_vs_avg_ratio = 0
+    
+    return {
+        "avg_views_per_day": round(avg_views_per_day, 2),
+        "avg_title_length": round(avg_title_length, 1),
+        "top_vs_avg_ratio": round(top_vs_avg_ratio, 2),
+    }
+
+
+def compute_consistency(videos: List[VideoData]) -> Dict:
+    views = [v.view_count for v in videos if v.view_count]
+    
+    if len(views) < 2:
+        return {"consistency": "LOW"}
+
+    variance = statistics.pstdev(views)
+    avg = sum(views) / len(views)
+
+    if avg == 0:
+        return {"consistency": "LOW"}
+
+    ratio = variance / avg
+
+    if ratio < 0.5:
+        return {"consistency": "HIGH"}
+    elif ratio < 1.5:
+        return {"consistency": "MEDIUM"}
+    else:
+        return {"consistency": "LOW"}
+
+
+def compute_transcript_analysis(videos: List[VideoData]) -> Dict:
+    """Analyze transcript patterns from top videos"""
+    if not videos:
+        return {"transcript_summary": {"hook_style": "Unknown", "pacing": "Unknown", "tone": "Unknown"}}
+    
+    # Get top videos by view count
+    top_videos = sorted(videos, key=lambda v: v.view_count or 0, reverse=True)[:2]
+    
+    all_transcripts = ""
+    for v in top_videos:
+        if hasattr(v, 'transcript') and v.transcript:
+            all_transcripts += " " + v.transcript
+    
+    if not all_transcripts.strip():
+        return {"transcript_summary": {"hook_style": "Unknown", "pacing": "Unknown", "tone": "Unknown"}}
+    
+    # Basic heuristics
+    transcript_lower = all_transcripts.lower()
+    
+    # Hook style analysis
+    hook_style = "question_based"
+    if "?" in transcript_lower and "what if" in transcript_lower:
+        hook_style = "curiosity_driven"
+    elif any(word in transcript_lower for word in ["shocking", "unbelievable", "never"]):
+        hook_style = "sensational"
+    elif any(word in transcript_lower for word in ["step by step", "tutorial", "how to"]):
+        hook_style = "educational"
+    else:
+        hook_style = "conversational"
+    
+    # Pacing analysis
+    sentences = transcript_lower.count(".") + transcript_lower.count("!") + transcript_lower.count("?")
+    avg_sentence_length = len(all_transcripts.split()) / max(sentences, 1)
+    
+    if avg_sentence_length > 20:
+        pacing = "slow"
+    elif avg_sentence_length < 10:
+        pacing = "fast"
+    else:
+        pacing = "moderate"
+    
+    # Tone analysis
+    you_count = len(re.findall(r"\byou\b", transcript_lower))
+    we_count = len(re.findall(r"\bwe\b", transcript_lower))
+    i_count = len(re.findall(r"\bi\b", transcript_lower))
+    
+    if you_count > i_count * 2:
+        tone = "direct_address"
+    elif we_count > i_count:
+        tone = "collaborative"
+    elif i_count > you_count + we_count:
+        tone = "personal"
+    else:
+        tone = "neutral"
+    
+    return {
+        "transcript_summary": {
+            "hook_style": hook_style,
+            "pacing": pacing,
+            "tone": tone
+        }
+    }
+
+
+def extract_features(videos: List[VideoData]) -> Dict:
+    breakout_summary = compute_breakout_summary(videos)
+    creator_distribution = compute_creator_distribution(videos)
+    title_patterns = compute_title_patterns(videos)
+    content_clusters = compute_content_clusters(videos)
+    freshness = compute_freshness(videos)
+    velocity_metrics = compute_velocity_metrics(videos)
+    consistency = compute_consistency(videos)
+    transcript_analysis = compute_transcript_analysis(videos)
+    
+    # Generate transcript sample from top videos
+    transcript_sample = ""
+    if videos:
+        top_videos = sorted(videos, key=lambda v: v.view_count or 0, reverse=True)[:2]
+        transcript_parts = []
+        for v in top_videos:
+            if hasattr(v, 'transcript') and v.transcript:
+                transcript_parts.append(v.transcript[:200])
+        transcript_sample = " | ".join(transcript_parts)
+
+    total_creators = (
+        creator_distribution["small"]
+        + creator_distribution["mid"]
+        + creator_distribution["large"]
+    )
+    large_share = (
+        (creator_distribution["large"] / total_creators) if total_creators > 0 else 0.0
+    )
+    competition_level = "HIGH" if large_share > 0.5 else "MEDIUM"
+    entry_barrier = (
+        "HIGH"
+        if competition_level == "HIGH"
+        and creator_distribution["small_creator_success_rate"] == "LOW"
+        else "MEDIUM"
+    )
+    
+    # Market dynamics abstraction
+    market_dynamics = "STABLE"
+    if velocity_metrics.get("top_vs_avg_ratio", 0) > 10:
+        market_dynamics = "WINNER_TAKES_ALL"
+    elif consistency.get("consistency") == "LOW":
+        market_dynamics = "VOLATILE"
+
+    features: Dict = {
+        "breakout_summary": breakout_summary,
+        "creator_distribution": creator_distribution,
+        "title_patterns": title_patterns,
+        "content_clusters": content_clusters,
+        "freshness": freshness,
+        "velocity_metrics": velocity_metrics,
+        "consistency": consistency,
+        "transcript_sample": transcript_sample,
+        "transcript_analysis": transcript_analysis,
+        "market_dynamics": market_dynamics,
+        "market_summary": {
+            "competition_level": competition_level,
+            "entry_barrier": entry_barrier,
+        },
+    }
+
+    print({
+        "stage": "feature_extractor",
+        "action": "extraction_complete",
+        "video_count": len(videos),
+        "features": features
+    })
+    return features
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/data_feature_extractor.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/llm_service.py =====
+import json
+import os
+import concurrent.futures
+from typing import Any, List, TypeVar
+
+import google.generativeai as genai
+from pydantic import BaseModel, ValidationError
+
+from creator_profile import DerivedCreatorProfile
+from models import AnalystReport, CreativeStrategy, VideoData
+
+_MODEL_NAME = "gemini-2.5-flash"
+_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+
+# -------------------------------
+# QUERY EXPANSION
+# -------------------------------
+_QUERY_EXPANSION_SYSTEM_PROMPT = (
+    "You are a YouTube SEO expert. Convert the user's raw video idea into exactly 3 "
+    "highly optimized YouTube search queries. Return ONLY a JSON array of 3 strings."
+)
+
+# -------------------------------
+# ANALYST PROMPT
+# -------------------------------
+_ANALYST_SYSTEM_PROMPT = (
+    "You are a data-driven YouTube strategist.\n\n"
+
+    "Evaluate FOUR dimensions (0-100):\n"
+    "- demand_score\n"
+    "- competition_score\n"
+    "- viral_potential\n"
+    "- exploitability\n\n"
+
+    "RULES:\n"
+    "- Emotional / relatable ideas → increase viral_potential + exploitability\n"
+    "- Do NOT penalize novelty\n\n"
+
+    "VERDICT:\n"
+    "- GO if viral_potential >=70 OR exploitability >=70\n"
+    "- MODIFY if high demand but high competition\n"
+    "- AVOID only if demand <30 AND viral <40\n\n"
+
+    "MARKET TYPES:\n"
+    "SATURATED, TRENDING, DEAD, NOVEL, PERSONALITY, HYBRID\n\n"
+
+    "Be sharp, not verbose."
+)
+
+# -------------------------------
+# CREATIVE PROMPT
+# -------------------------------
+_CREATIVE_SYSTEM_PROMPT = (
+    "You are a YouTube growth expert.\n\n"
+
+    "Generate:\n"
+    "- strong title\n"
+    "- hook\n"
+    "- thumbnail idea\n\n"
+
+    "RULES:\n"
+    "- prioritize CTR + curiosity\n"
+    "- avoid generic ideas\n"
+    "- keep it practical\n"
+)
+
+TModel = TypeVar("TModel", bound=BaseModel)
+
+
+def configure_gemini(api_key: str) -> None:
+    if not api_key:
+        raise ValueError("Missing GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
+
+
+def _configure_from_env():
+    configure_gemini(os.environ.get("GEMINI_API_KEY", ""))
+
+
+def _extract_json_array(raw: str) -> List[str]:
+    start = raw.find("[")
+    end = raw.rfind("]")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("No JSON array found in model output")
+    return json.loads(raw[start:end + 1])
+
+
+def _extract_json_object(raw: str) -> dict:
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("No JSON object found in model output")
+    return json.loads(raw[start:end + 1])
+
+
+def _parse(raw: str, schema: type[TModel]) -> TModel:
+    try:
+        return schema.model_validate_json(raw)
+    except Exception as e:
+        print(f"[_parse error] {e}")
+        return schema.model_validate(_extract_json_object(raw))
+
+
+def generate_content_with_timeout(
+    model: Any,
+    prompt: str,
+    generation_config: Any,
+    timeout_s: float,
+):
+    future = _EXECUTOR.submit(
+        model.generate_content,
+        prompt,
+        generation_config=generation_config,
+    )
+    return future.result(timeout=timeout_s)
+
+
+def expand_idea_to_queries(idea: str) -> List[str]:
+    _configure_from_env()
+    model = genai.GenerativeModel(
+        _MODEL_NAME,
+        system_instruction=_QUERY_EXPANSION_SYSTEM_PROMPT,
+    )
+    response = model.generate_content(
+        idea,
+        generation_config=genai.GenerationConfig(
+            response_mime_type="application/json",
+        ),
+    )
+    raw_text = response.text or "[]"
+    try:
+        queries = _extract_json_array(raw_text)
+    except Exception:
+        return []
+
+    normalized = [str(q).strip() for q in queries if str(q).strip()]
+    return normalized[:3]
+
+
+# -------------------------------
+# VIDEO SUMMARY
+# -------------------------------
+def _build_video_summary(videos: List[VideoData]) -> str:
+    return json.dumps([
+        {
+            "title": v.title,
+            "views": v.view_count,
+            "subs": v.subscriber_count,
+            "age": v.age_days,
+            "breakout": v.breakout_multiplier,
+        }
+        for v in videos
+    ])
+
+
+# Legacy function - no longer used in the main pipeline
+# Kept for reference but should be removed in production cleanup
+# def generate_strategy(...):
+
+# ===== END FILE: D:/YtAdvisor.ai/python/llm_service.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/main.py =====
+import os
+import time
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from llm_service import configure_gemini, expand_idea_to_queries
+from creator_profile_service import build_creator_profile
+from data_feature_extractor import extract_features
+from analyst_agent import run_analyst_agent
+from optimizer_agent import OptimizerAgentOutput, run_optimizer_agent
+from strategist_agent import run_strategist_agent
+from models import IdeaRequest
+from youtube_service import (
+    detect_fragmented,
+    detect_monopoly,
+    detect_personality_driven,
+    get_competitor_data,
+)
+
+load_dotenv()
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "YouTube AI Strategy Engine Active"}
+
+
+@app.get("/test")
+def test_gemini():
+    """Lightweight health-check: confirms Gemini API connectivity."""
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_api_key:
+        raise HTTPException(status_code=500, detail="Missing GEMINI_API_KEY in environment.")
+    configure_gemini(gemini_api_key)
+    queries = expand_idea_to_queries("study tips")
+    return {"status": "ok", "queries": queries}
+
+
+@app.post("/analyze", response_model=OptimizerAgentOutput)
+def analyze(request: IdeaRequest) -> OptimizerAgentOutput:
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_api_key:
+        raise HTTPException(status_code=500, detail="Missing GEMINI_API_KEY in environment.")
+    youtube_api_key = os.environ.get("YOUTUBE_API_KEY")
+    if not youtube_api_key:
+        raise HTTPException(status_code=500, detail="Missing YOUTUBE_API_KEY in environment.")
+
+    try:
+        t0 = time.monotonic()
+        configure_gemini(gemini_api_key)
+
+        t_queries = time.monotonic()
+        queries = expand_idea_to_queries(request.idea)
+        print({"stage": "main", "action": "queries_done", "elapsed_s": round(time.monotonic() - t_queries, 3)})
+        if not queries:
+            queries = [request.idea]
+
+        t_videos = time.monotonic()
+        videos = get_competitor_data(queries, youtube_api_key)
+        print({"stage": "main", "action": "videos_done", "elapsed_s": round(time.monotonic() - t_videos, 3), "video_count": len(videos)})
+        
+        if not videos:
+            raise HTTPException(
+                status_code=400,
+                detail="No relevant videos found. Try a clearer idea."
+            )
+
+        t_features = time.monotonic()
+        features = extract_features(videos)
+        print({"stage": "main", "action": "features_done", "elapsed_s": round(time.monotonic() - t_features, 3)})
+
+        is_monopoly = detect_monopoly(videos)
+        is_personality = detect_personality_driven(videos)
+        is_fragmented = detect_fragmented(videos)
+
+        t_profile = time.monotonic()
+        derived_profile = build_creator_profile(request.creator_profile)
+        print({
+            "stage": "main",
+            "action": "creator_profile_built",
+            "mode": derived_profile.mode,
+            "channel_size": derived_profile.channel_size_bucket,
+            "elapsed_s": round(time.monotonic() - t_profile, 3),
+        })
+
+        t_analyst = time.monotonic()
+        analyst_output = run_analyst_agent(
+            request.idea,
+            features,
+            derived_profile,
+            is_monopoly=is_monopoly,
+            is_personality=is_personality,
+            is_fragmented=is_fragmented,
+        )
+        print({"stage": "main", "action": "analyst_done", "elapsed_s": round(time.monotonic() - t_analyst, 3)})
+
+        t_strategist = time.monotonic()
+        strategist_output = run_strategist_agent(
+            request.idea,
+            analyst_output,
+            derived_profile,
+        )
+        print({"stage": "main", "action": "strategist_done", "elapsed_s": round(time.monotonic() - t_strategist, 3)})
+        # Stored for now; do not merge into the strategy response yet.
+
+        t_optimizer = time.monotonic()
+        optimizer_output = run_optimizer_agent(
+            request.idea,
+            analyst_output,
+            strategist_output,
+            derived_profile,
+        )
+
+        print({
+            "stage": "main",
+            "action": "optimizer_done",
+            "elapsed_s": round(time.monotonic() - t_optimizer, 3),
+            "total_elapsed_s": round(time.monotonic() - t0, 3),
+        })
+
+        return optimizer_output
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"External API failure: {exc}") from exc
+
+# ===== END FILE: D:/YtAdvisor.ai/python/main.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/models.py =====
+from typing import List, Optional
+
+from pydantic import BaseModel
+
+from creator_profile import CreatorProfile
+
+
+class IdeaRequest(BaseModel):
+    idea: str
+    creator_profile: Optional[CreatorProfile] = None
+
+
+# --- Analyst Agent Models ---
+class Verdict(BaseModel):
+    decision: str  # GO, MODIFY, AVOID
+    confidence_score: int  # 0-100
+
+    # 🔥 NEW (important)
+    one_line_reason: str
+
+    brutal_truth: str
+    opportunity_type: str  # VIRAL, SATURATED, NICHE, PERSONAL, TRENDING, DEAD
+
+
+class CompetitorMetrics(BaseModel):
+    common_title_keywords_percentage: str
+    average_video_age: str
+    highest_breakout_multiplier: float
+
+
+class MarketAnalysis(BaseModel):
+    demand_score: int
+    competition_score: int
+
+    viral_potential: int
+    exploitability: int
+    market_type: str  # SATURATED, TRENDING, DEAD, NOVEL, PERSONALITY, HYBRID
+
+    dominant_patterns: List[str]
+    content_gaps: List[str]
+
+
+class AnalystReport(BaseModel):
+    verdict: Verdict
+    competitor_metrics: CompetitorMetrics
+    market_analysis: MarketAnalysis
+
+
+# --- Creative Agent Models ---
+class Strategy(BaseModel):
+    positioning: str
+    content_angle: str
+    differentiation: str
+
+
+class TitleExecution(BaseModel):
+    primary: str
+    alternatives: List[str]
+
+
+class Execution(BaseModel):
+    title: TitleExecution
+    thumbnail_concept: str
+    hook_script: str
+    target_video_length: str
+    video_structure_timestamps: List[str]
+
+
+class ScoringMatrix(BaseModel):
+    idea_viability: int
+    ctr_potential: int
+    retention_difficulty: int
+    overall_score: int
+
+    viral_score: int
+    competition_difficulty: int
+
+
+class ActionPlan(BaseModel):
+    do_this_now: List[str]
+    avoid_this: List[str]
+
+
+class CreativeStrategy(BaseModel):
+    strategy: Strategy
+    execution: Execution
+    scoring_matrix: ScoringMatrix
+    action_plan: ActionPlan
+    effort_level: str
+
+
+# --- Final Output ---
+class StrategyResponse(BaseModel):
+    verdict: Verdict
+    competitor_metrics: CompetitorMetrics
+    market_analysis: MarketAnalysis
+    strategy: Strategy
+    execution: Execution
+    scoring_matrix: ScoringMatrix
+    action_plan: ActionPlan
+    effort_level: str
+
+
+class VideoData(BaseModel):
+    video_id: str
+    channel_id: str
+    title: str
+    view_count: int
+    subscriber_count: int
+    age_days: int
+    category_id: str
+    transcript: str
+    breakout_multiplier: float
+
+# ===== END FILE: D:/YtAdvisor.ai/python/models.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/optimizer_agent.py =====
+from __future__ import annotations
+
+import json
+import time
+import traceback
+from typing import List, Optional
+
+import google.generativeai as genai
+from pydantic import BaseModel
+
+from creator_profile import DerivedCreatorProfile
+import llm_service
+
+
+class FinalVerdict(BaseModel):
+    decision: str  # "GO / MODIFY / AVOID"
+    confidence: str  # "LOW / MEDIUM / HIGH"
+    reason: str
+
+
+class ExecutionPlan(BaseModel):
+    title: str
+    hook: str
+    thumbnail_concept: str
+    video_structure: List[str]
+
+
+class PerformanceOutlook(BaseModel):
+    potential: str  # "LOW / MEDIUM / HIGH"
+    risk: str  # "LOW / MEDIUM / HIGH"
+    reason: str
+
+
+class OptimizerAgentOutput(BaseModel):
+    key_insight: str
+    final_verdict: FinalVerdict
+    execution_plan: ExecutionPlan
+    next_moves: List[str]
+    avoid: List[str]
+    performance_outlook: PerformanceOutlook
+    why_this_will_work: str
+    gap_exploited: Optional[str] = None
+    is_reliable: bool
+    warning: Optional[str] = None
+
+
+def run_optimizer_agent(
+    idea: str,
+    analyst_output: dict,
+    strategist_output: dict,
+    creator_profile: Optional[DerivedCreatorProfile],
+) -> dict:
+    print("[optimizer] starting...")
+    t0 = time.monotonic()
+
+    creator_mode = "generic"
+    channel_size_bucket = "small"
+    competition_tolerance = "low"
+    growth_stage = "early"
+    performance_ratio = 0.0
+
+    if creator_profile is not None:
+        creator_mode = creator_profile.mode
+        channel_size_bucket = creator_profile.channel_size_bucket
+        competition_tolerance = creator_profile.competition_tolerance
+        growth_stage = creator_profile.growth_stage
+        performance_ratio = creator_profile.performance_ratio
+
+    system_prompt = (
+        "You are a YouTube execution expert.\n\n"
+        "Your job is to:\n"
+        "* Convert strategy into clear actions\n"
+        "* Decide if the idea is worth pursuing\n"
+        "* Make output practical and decisive\n\n"
+        "STRICT RULES:\n"
+        "* Be direct and decisive\n"
+        "* Avoid generic advice\n"
+        "* Focus on execution, not theory\n\n"
+        "DECISION AUTHORITY RULE:\n"
+        "* You MUST make a clear decision in final_verdict.decision: GO / MODIFY / AVOID.\n"
+        "* Do NOT be neutral or vague.\n"
+        "* Do NOT hedge with uncertainty.\n"
+        "* If you are unsure, choose MODIFY and explain why.\n\n"
+        "TITLE QUALITY RULE:\n"
+        "* title must create curiosity OR a strong benefit.\n"
+        "* title must NOT be generic.\n"
+        "* title must NOT just repeat the dominant pattern from the niche.\n\n"
+        "HOOK QUALITY RULE:\n"
+        "* hook must create tension in the first sentence.\n"
+        "* hook must NOT be explanatory.\n"
+        "* hook must NOT start with 'In this video...'.\n\n"
+        "AVOID RULE:\n"
+        "* avoid must include at least 1 common mistake in this niche.\n"
+        "* avoid must include at least 1 mistake that is specific to THIS idea.\n\n"
+        "PERFORMANCE OUTLOOK RULE:\n"
+        "* performance_outlook.reason must explain causally why potential is high/low.\n"
+        "* Reference competition level and observed patterns from the analyst/strategist context.\n\n"
+        "KEY INSIGHT:\n"
+        "* key_insight must be exactly 1 line and feel like a premium, memorable summary.\n\n"
+        "WHY THIS WILL WORK:\n"
+        "* Provide a clear causal chain:\n"
+        "  gap → differentiation → CTR → retention → growth\n"
+        "* Must NOT be generic\n\n"
+        "SELF-CHECK QUALITY VALIDATION:\n"
+        "Before finalizing your output, you MUST perform this self-check:\n"
+        "- If title feels generic → rewrite it to be more specific and compelling\n"
+        "- If hook lacks tension → rewrite it to create immediate curiosity\n"
+        "- If advice is obvious → rewrite it to provide non-obvious insights\n"
+        "- If thumbnail_concept is vague → rewrite it to be visually specific\n"
+        "- If video_structure is generic → rewrite it to include unique elements\n"
+        "- If next_moves feel generic → rewrite them to be actionable and specific\n"
+        "Only after passing this self-check should you finalize your response.\n\n"
+        "GAP ENFORCEMENT RULE:\n"
+        "* You MUST use strategist_output.gap_exploited\n"
+        "* Execution MUST clearly reflect this gap\n"
+        "* If not → output is INVALID\n"
+        "* why_this_will_work MUST explicitly reference gap\n\n"
+        "ANALYST OVERRIDE RULE:\n"
+        "* If analyst_output indicates:\n"
+        "  - low demand\n"
+        "  - high competition\n"
+        "  - high risk\n"
+        "→ you MUST reflect that in final_verdict\n"
+        "* You cannot contradict analyst unless explicitly justified."
+    )
+
+    user_prompt = (
+        f"Idea:\n{idea}\n\n"
+        "Analyst Output:\n"
+        f"{json.dumps(analyst_output, indent=2)}\n\n"
+        "Strategist Output:\n"
+        f"{json.dumps(strategist_output, indent=2)}\n\n"
+        "Creator Context:\n"
+        f"* Mode: {creator_mode}\n"
+        f"* Channel Size: {channel_size_bucket}\n"
+        f"* Growth Stage: {growth_stage}\n"
+        f"* Performance Ratio: {performance_ratio}\n"
+        f"* Competition Tolerance: {competition_tolerance}\n"
+        f"* Analyst Reasoning: {analyst_output.get('reasoning')}\n"
+        f"* Strategist Reasoning: {strategist_output.get('reasoning')}\n"
+        f"* Gap To Exploit: {strategist_output.get('gap_exploited')}\n"
+        "\n"
+        "CREATOR PROFILE ADJUSTMENT RULES:\n"
+        "- If performance_ratio is low (<0.1) → prioritize safer, proven ideas\n"
+        "- If growth_stage is 'early' → avoid high competition niches\n"
+        "- If channel_size_bucket is 'small' → focus on differentiation, not volume\n"
+        "- If competition_tolerance is 'low' → avoid saturated markets\n"
+        "Apply these rules to your execution plan."
+    )
+
+    model = genai.GenerativeModel(
+        llm_service._MODEL_NAME,
+        system_instruction=system_prompt,
+    )
+    try:
+        response = llm_service.generate_content_with_timeout(
+            model,
+            user_prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.7,
+                response_mime_type="application/json",
+            ),
+            timeout_s=60,
+        )
+    except Exception:
+        traceback.print_exc()
+        result = {
+            "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
+            "final_verdict": {
+                "decision": "MODIFY",
+                "confidence": "LOW",
+                "reason": "LLM request timed out or failed.",
+            },
+            "execution_plan": {
+                "title": "N/A",
+                "hook": "N/A",
+                "thumbnail_concept": "N/A",
+                "video_structure": [],
+            },
+            "next_moves": [],
+            "avoid": [],
+            "performance_outlook": {
+                "potential": "LOW",
+                "risk": "MEDIUM",
+                "reason": "No reliable execution guidance available.",
+            },
+            "why_this_will_work": "Unable to generate reliable execution plan due to timeout/failure.",
+            "gap_exploited": strategist_output.get("gap_exploited") or "Unknown",
+            "is_reliable": False,
+            "warning": "Low confidence output. Retry recommended.",
+        }
+        print({
+            "stage": "optimizer",
+            "idea": idea,
+            "output": result,
+        })
+        print(f"[optimizer] done in {time.monotonic() - t0:.1f}s")
+        return result
+
+    raw_text = response.text or ""
+
+    parsed_successfully = False
+    try:
+        parsed = llm_service._parse(raw_text, OptimizerAgentOutput)
+        result = parsed.model_dump()
+        parsed_successfully = True
+    except Exception:
+        traceback.print_exc()
+        try:
+            start = raw_text.find("{")
+            end = raw_text.rfind("}")
+            obj = json.loads(raw_text[start : end + 1])
+            result = OptimizerAgentOutput.model_validate(obj).model_dump()
+            parsed_successfully = True
+        except Exception:
+            traceback.print_exc()
+            result = {
+                "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
+                "final_verdict": {
+                    "decision": "MODIFY",
+                    "confidence": "LOW",
+                    "reason": "LLM output could not be parsed reliably.",
+                },
+                "execution_plan": {
+                    "title": "N/A",
+                    "hook": "N/A",
+                    "thumbnail_concept": "N/A",
+                    "video_structure": [],
+                },
+                "next_moves": [],
+                "avoid": [],
+                "performance_outlook": {
+                    "potential": "LOW",
+                    "risk": "MEDIUM",
+                    "reason": "No reliable execution guidance available.",
+                },
+                "why_this_will_work": "Unable to generate reliable execution plan due to parsing failure.",
+                "gap_exploited": "Unknown",
+                "is_reliable": False,
+                "warning": "Low confidence output. Retry recommended.",
+            }
+    
+    result["is_reliable"] = parsed_successfully
+    
+    # Post-gap validation - check actual usage, not just presence
+    if parsed_successfully:
+        gap = strategist_output.get("gap_exploited", "").lower()
+        execution_text = json.dumps(result).lower()
+        
+        if gap and gap not in execution_text:
+            result["is_reliable"] = False
+            result["why_this_will_work"] = "Gap not reflected in execution."
+        elif result.get("gap_exploited") == "Unknown":
+            result["is_reliable"] = False
+            result["why_this_will_work"] = "Gap validation failed: no specific gap identified."
+        
+        # Analyst override enforcement
+        analyst_win = analyst_output.get("can_small_creator_win", {}).get("verdict", "")
+        decision = result.get("final_verdict", {}).get("decision", "")
+        
+        if analyst_win == "NO" and decision == "GO":
+            result["final_verdict"]["decision"] = "MODIFY"
+            result["final_verdict"]["reason"] = "Adjusted due to analyst indicating low feasibility."
+            result["is_reliable"] = False
+
+    # Failure escalation system
+    if not result.get("is_reliable", True):
+        # Always default to MODIFY for unreliable outputs
+        if "final_verdict" in result and "decision" in result["final_verdict"]:
+            if result["final_verdict"]["decision"] == "GO":
+                result["final_verdict"]["decision"] = "MODIFY"
+                result["final_verdict"]["reason"] = "Low confidence output. Retry recommended."
+        
+        # Add warning for frontend
+        result["warning"] = "Low confidence output. Retry recommended."
+
+    print({
+        "stage": "optimizer",
+        "idea": idea,
+        "output": result
+    })
+    print(f"[optimizer] done in {time.monotonic() - t0:.1f}s")
+    return result
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/optimizer_agent.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/strategist_agent.py =====
+from __future__ import annotations
+
+import json
+import time
+import traceback
+from typing import List, Optional
+
+import google.generativeai as genai
+from pydantic import BaseModel, Field
+
+from creator_profile import DerivedCreatorProfile
+import llm_service
+
+
+class StrategistAgentOutput(BaseModel):
+    positioning: str
+    content_angle: str
+    idea_upgrade: str
+    differentiation_strategy: str
+    gap_exploited: str
+    next_video_ideas: List[str]
+    reasoning: str
+
+
+def run_strategist_agent(
+    idea: str,
+    analyst_output: dict,
+    creator_profile: Optional[DerivedCreatorProfile],
+) -> dict:
+    print("[strategist] starting...")
+    t0 = time.monotonic()
+
+    creator_mode = "generic"
+    channel_size_bucket = "small"
+    competition_tolerance = "low"
+    growth_stage = "early"
+    performance_ratio = 0.0
+
+    if creator_profile is not None:
+        creator_mode = creator_profile.mode
+        channel_size_bucket = creator_profile.channel_size_bucket
+        competition_tolerance = creator_profile.competition_tolerance
+        growth_stage = creator_profile.growth_stage
+        performance_ratio = creator_profile.performance_ratio
+
+    system_prompt = (
+        "You are a YouTube content strategist.\n\n"
+        "Your job is to:\n"
+        "* Turn market insights into winning video ideas\n"
+        "* Create strong positioning and angles\n"
+        "* Exploit gaps and weaknesses\n\n"
+        "STRICT RULES:\n"
+        "* Do NOT repeat analysis\n"
+        "* Do NOT give generic advice\n"
+        "* Do NOT re-analyze the market.\n"
+        "* Focus on DIFFERENTIATION.\n"
+        "* Your strategy MUST be based on contrast.\n"
+        "* Identify what most creators are doing.\n"
+        "* Then deliberately propose a different angle.\n"
+        "* If your idea sounds similar to existing content, it is WRONG.\n\n"
+        "MANDATORY: CONTENT GAP EXPLOITATION\n"
+        "* Your strategy MUST directly exploit at least one content gap from the analysis.\n"
+        "* If you do not use a content gap, your strategy is INVALID.\n"
+        "* Explicitly reference which content gap you are exploiting.\n"
+        "* Your differentiation_strategy must explain HOW you exploit the gap.\n"
+        "* Your idea_upgrade must be a direct response to the identified gap.\n\n"
+        "MANDATORY GAP TRACEABILITY:\n"
+        "* You MUST explicitly state which content gap you are exploiting.\n"
+        "* gap_exploited must be a direct reference to one of the provided content_gaps.\n"
+        "* differentiation_strategy MUST explain how this gap is exploited.\n"
+        "* If no gap is used, your output is INVALID.\n\n"
+        "RULES FOR OUTPUT FIELDS:\n"
+        "* idea_upgrade must be a FULL improved video concept (not an explanation).\n"
+        "* next_video_ideas must follow a progression (beginner → deeper → viral).\n"
+        "* next_video_ideas must NOT be random; each idea must be clearly different in angle.\n"
+        "* Provide reasoning as a short explanation why this strategy works.\n"
+        "* Keep everything specific, sharp, and strategic.\n"
+    )
+
+    user_prompt = (
+        "Idea:\n"
+        f"{idea}\n\n"
+        "Analyst Insights:\n"
+        f"* Market Truth: {analyst_output.get('market_truth')}\n"
+        f"* Dominant Force: {analyst_output.get('dominant_force')}\n"
+        f"* Opportunity: {analyst_output.get('opportunity')}\n"
+        f"* Risk: {analyst_output.get('risk')}\n"
+        f"* Content Gaps: {analyst_output.get('content_gaps')}\n"
+        f"* Can Win: {analyst_output.get('can_small_creator_win')}\n"
+        f"* Reasoning: {analyst_output.get('reasoning')}\n\n"
+        "Creator Context:\n"
+        f"* Mode: {creator_mode}\n"
+        f"* Channel Size: {channel_size_bucket}\n"
+        f"* Growth Stage: {growth_stage}\n"
+        f"* Performance Ratio: {performance_ratio}\n"
+        f"* Competition Tolerance: {competition_tolerance}\n"
+        "\n"
+        "CREATOR PROFILE ADJUSTMENT RULES:\n"
+        "- If performance_ratio is low (<0.1) → prioritize safer, proven ideas\n"
+        "- If growth_stage is 'early' → avoid high competition niches\n"
+        "- If channel_size_bucket is 'small' → focus on differentiation, not volume\n"
+        "- If competition_tolerance is 'low' → avoid saturated markets\n"
+        "Apply these rules to your strategy."
+    )
+
+    model = genai.GenerativeModel(
+        llm_service._MODEL_NAME,
+        system_instruction=system_prompt,
+    )
+    try:
+        response = llm_service.generate_content_with_timeout(
+            model,
+            user_prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.8,
+                response_mime_type="application/json",
+                response_schema=StrategistAgentOutput,
+            ),
+            timeout_s=45,
+        )
+    except Exception:
+        traceback.print_exc()
+        result = {
+            "positioning": "N/A",
+            "content_angle": "N/A",
+            "idea_upgrade": "N/A",
+            "differentiation_strategy": "N/A",
+            "gap_exploited": "Unknown",
+            "next_video_ideas": [],
+            "reasoning": "LLM request timed out or failed.",
+        }
+        print({
+            "stage": "strategist",
+            "idea": idea,
+            "output": result,
+        })
+        print(f"[strategist] done in {time.monotonic() - t0:.1f}s")
+        return result
+
+    raw_text = response.text or ""
+
+    try:
+        parsed = llm_service._parse(raw_text, StrategistAgentOutput)
+        result = parsed.model_dump()
+    except Exception:
+        traceback.print_exc()
+        try:
+            start = raw_text.find("{")
+            end = raw_text.rfind("}")
+            obj = json.loads(raw_text[start : end + 1])
+            result = StrategistAgentOutput.model_validate(obj).model_dump()
+        except Exception:
+            traceback.print_exc()
+            result = {
+                "positioning": "N/A",
+                "content_angle": "N/A",
+                "idea_upgrade": "N/A",
+                "differentiation_strategy": "N/A",
+                "gap_exploited": "Unknown",
+                "next_video_ideas": [],
+                "reasoning": "LLM output could not be parsed reliably.",
+            }
+
+    print({
+        "stage": "strategist",
+        "idea": idea,
+        "output": result
+    })
+    print(f"[strategist] done in {time.monotonic() - t0:.1f}s")
+    return result
+
+
+# ===== END FILE: D:/YtAdvisor.ai/python/strategist_agent.py =====
+
+# ===== FILE: D:/YtAdvisor.ai/python/youtube_service.py =====
+import concurrent.futures
+import re
+from datetime import datetime, timezone
+from statistics import median
+from typing import Dict, List, Set
+
+from googleapiclient.discovery import build
+from youtube_transcript_api import YouTubeTranscriptApi
+
+from models import VideoData
+
+
+def _chunked(items: List[str], size: int) -> List[List[str]]:
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+def _safe_int(value: str | int | None) -> int:
+    try:
+        return int(value) if value is not None else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def _age_days_from_published_at(published_at: str) -> int:
+    try:
+        published_dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc
+        )
+    except (TypeError, ValueError):
+        return 0
+    delta = datetime.now(timezone.utc) - published_dt
+    return max(delta.days, 0)
+
+
+def get_competitor_data(queries: List[str], api_key: str) -> List[VideoData]:
+    youtube = build("youtube", "v3", developerKey=api_key)
+    deduped_video_ids: List[str] = []
+    seen_ids: Set[str] = set()
+
+    for query in queries:
+        search_response = (
+            youtube.search()
+            .list(
+                part="id",
+                q=query,
+                type="video",
+                maxResults=5,
+            )
+            .execute()
+        )
+        for item in search_response.get("items", []):
+            video_id = item.get("id", {}).get("videoId")
+            if video_id and video_id not in seen_ids:
+                seen_ids.add(video_id)
+                deduped_video_ids.append(video_id)
+
+    if not deduped_video_ids:
+        return []
+
+    video_items: List[dict] = []
+    for batch_ids in _chunked(deduped_video_ids, 50):
+        videos_response = (
+            youtube.videos()
+            .list(
+                part="snippet,statistics",
+                id=",".join(batch_ids),
+                maxResults=len(batch_ids),
+            )
+            .execute()
+        )
+        video_items.extend(videos_response.get("items", []))
+
+    channel_ids: Set[str] = set()
+    for item in video_items:
+        channel_id = item.get("snippet", {}).get("channelId")
+        if channel_id:
+            channel_ids.add(channel_id)
+
+    channel_subscribers: Dict[str, int] = {}
+    for batch_channel_ids in _chunked(list(channel_ids), 50):
+        channels_response = (
+            youtube.channels()
+            .list(
+                part="statistics",
+                id=",".join(batch_channel_ids),
+                maxResults=len(batch_channel_ids),
+            )
+            .execute()
+        )
+        for channel_item in channels_response.get("items", []):
+            channel_id = channel_item.get("id", "")
+            subscriber_count = _safe_int(
+                channel_item.get("statistics", {}).get("subscriberCount")
+            )
+            channel_subscribers[channel_id] = subscriber_count
+
+    # Fetch all transcripts in parallel
+    def _fetch_transcript(vid_id: str) -> str:
+        try:
+            transcript_items = YouTubeTranscriptApi.get_transcript(vid_id)
+            return " ".join(
+                segment.get("text", "") for segment in transcript_items
+            )[:1500]
+        except Exception:
+            return ""
+
+    video_ids_for_transcripts = [item.get("id", "") for item in video_items]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        transcripts = list(executor.map(_fetch_transcript, video_ids_for_transcripts))
+
+    videos_by_id: Dict[str, VideoData] = {}
+    for idx, item in enumerate(video_items):
+        video_id = item.get("id", "")
+        snippet = item.get("snippet", {})
+        statistics = item.get("statistics", {})
+
+        channel_id = snippet.get("channelId", "")
+        transcript_text = transcripts[idx]
+
+        view_count = _safe_int(statistics.get("viewCount"))
+        subscriber_count = channel_subscribers.get(channel_id, 0)
+        if subscriber_count > 0:
+            breakout_multiplier = round(view_count / subscriber_count, 2)
+        else:
+            breakout_multiplier = 0.0
+
+        videos_by_id[video_id] = VideoData(
+            video_id=video_id,
+            channel_id=channel_id,
+            title=snippet.get("title", ""),
+            view_count=view_count,
+            subscriber_count=subscriber_count,
+            age_days=_age_days_from_published_at(snippet.get("publishedAt", "")),
+            category_id=snippet.get("categoryId", ""),
+            transcript=transcript_text,
+            breakout_multiplier=breakout_multiplier,
+        )
+
+    ordered_videos: List[VideoData] = []
+    for video_id in deduped_video_ids:
+        video_data = videos_by_id.get(video_id)
+        if video_data:
+            ordered_videos.append(video_data)
+    return ordered_videos
+
+
+def detect_monopoly(videos: List[VideoData]) -> bool:
+    if not videos:
+        return False
+    median_subscribers = median(video.subscriber_count for video in videos)
+    median_age_days = median(video.age_days for video in videos)
+    return median_subscribers > 500_000 and median_age_days > 365
+
+
+def detect_personality_driven(videos: List[VideoData]) -> bool:
+    if not videos:
+        return False
+
+    personality_categories = {"22", "24"}
+    category_matches = sum(1 for video in videos if video.category_id in personality_categories)
+    category_ratio = category_matches / len(videos)
+
+    pronouns = {"i", "me", "my", "we"}
+    pronoun_count = 0
+    total_words = 0
+
+    for video in videos:
+        words = re.findall(r"\b\w+\b", video.transcript.lower())
+        total_words += len(words)
+        pronoun_count += sum(1 for word in words if word in pronouns)
+
+    if total_words == 0:
+        return False
+
+    pronoun_ratio = pronoun_count / total_words
+    return category_ratio > 0.5 and pronoun_ratio > 0.05
+
+
+def detect_fragmented(videos: List[VideoData]) -> bool:
+    """Fragmented / 'Frankenstein' niche: seed results span many unrelated categories.
+
+    Uses scraped metadata only (YouTube deprecated relatedToVideoId in Aug 2023).
+    """
+    if not videos:
+        return False
+    unique_categories = len({v.category_id for v in videos if v.category_id})
+    return unique_categories >= 4
+
+# ===== END FILE: D:/YtAdvisor.ai/python/youtube_service.py =====
+

@@ -1,3 +1,4 @@
+import concurrent.futures
 import re
 from datetime import datetime, timezone
 from statistics import median
@@ -6,7 +7,7 @@ from typing import Dict, List, Set
 from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
 
-from .models import VideoData
+from models import VideoData
 
 
 def _chunked(items: List[str], size: int) -> List[List[str]]:
@@ -93,30 +94,46 @@ def get_competitor_data(queries: List[str], api_key: str) -> List[VideoData]:
             )
             channel_subscribers[channel_id] = subscriber_count
 
+    # Fetch all transcripts in parallel
+    def _fetch_transcript(vid_id: str) -> str:
+        try:
+            transcript_items = YouTubeTranscriptApi.get_transcript(vid_id)
+            return " ".join(
+                segment.get("text", "") for segment in transcript_items
+            )[:1500]
+        except Exception:
+            return ""
+
+    video_ids_for_transcripts = [item.get("id", "") for item in video_items]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        transcripts = list(executor.map(_fetch_transcript, video_ids_for_transcripts))
+
     videos_by_id: Dict[str, VideoData] = {}
-    for item in video_items:
+    for idx, item in enumerate(video_items):
         video_id = item.get("id", "")
         snippet = item.get("snippet", {})
         statistics = item.get("statistics", {})
 
         channel_id = snippet.get("channelId", "")
-        transcript_text = ""
-        try:
-            transcript_items = YouTubeTranscriptApi.get_transcript(video_id)
-            transcript_text = " ".join(
-                segment.get("text", "") for segment in transcript_items
-            )[:1500]
-        except Exception:
-            transcript_text = ""
+        transcript_text = transcripts[idx]
+
+        view_count = _safe_int(statistics.get("viewCount"))
+        subscriber_count = channel_subscribers.get(channel_id, 0)
+        if subscriber_count > 0:
+            breakout_multiplier = round(view_count / subscriber_count, 2)
+        else:
+            breakout_multiplier = 0.0
 
         videos_by_id[video_id] = VideoData(
             video_id=video_id,
+            channel_id=channel_id,
             title=snippet.get("title", ""),
-            view_count=_safe_int(statistics.get("viewCount")),
-            subscriber_count=channel_subscribers.get(channel_id, 0),
+            view_count=view_count,
+            subscriber_count=subscriber_count,
             age_days=_age_days_from_published_at(snippet.get("publishedAt", "")),
             category_id=snippet.get("categoryId", ""),
             transcript=transcript_text,
+            breakout_multiplier=breakout_multiplier,
         )
 
     ordered_videos: List[VideoData] = []
@@ -159,46 +176,12 @@ def detect_personality_driven(videos: List[VideoData]) -> bool:
     return category_ratio > 0.5 and pronoun_ratio > 0.05
 
 
-def detect_fragmented(video_ids: List[str], api_key: str) -> bool:
-    unique_ids: List[str] = []
-    seen_ids: Set[str] = set()
-    for video_id in video_ids:
-        if video_id not in seen_ids:
-            seen_ids.add(video_id)
-            unique_ids.append(video_id)
-        if len(unique_ids) == 3:
-            break
+def detect_fragmented(videos: List[VideoData]) -> bool:
+    """Fragmented / 'Frankenstein' niche: seed results span many unrelated categories.
 
-    if len(unique_ids) < 3:
+    Uses scraped metadata only (YouTube deprecated relatedToVideoId in Aug 2023).
+    """
+    if not videos:
         return False
-
-    youtube = build("youtube", "v3", developerKey=api_key)
-    related_sets: List[Set[str]] = []
-
-    for seed_video_id in unique_ids:
-        try:
-            related_response = (
-                youtube.search()
-                .list(
-                    part="id",
-                    relatedToVideoId=seed_video_id,
-                    type="video",
-                    maxResults=5,
-                )
-                .execute()
-            )
-        except Exception:
-            return False
-
-        related_ids = {
-            item.get("id", {}).get("videoId")
-            for item in related_response.get("items", [])
-            if item.get("id", {}).get("videoId")
-        }
-        related_sets.append(related_ids)
-
-    if len(related_sets) < 3:
-        return False
-
-    common_ids = set.intersection(*related_sets) if related_sets else set()
-    return len(common_ids) == 0
+    unique_categories = len({v.category_id for v in videos if v.category_id})
+    return unique_categories >= 4
