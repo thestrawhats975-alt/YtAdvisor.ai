@@ -88,6 +88,7 @@ def run_analyst_agent(
     is_monopoly: bool = False,
     is_personality: bool = False,
     is_fragmented: bool = False,
+    content_mode: str = "SEARCH",
 ) -> dict:
     print("[analyst] starting...")
     t0 = time.monotonic()
@@ -107,38 +108,6 @@ def run_analyst_agent(
         competition_tolerance = creator_profile.competition_tolerance
         performance_ratio = creator_profile.performance_ratio
 
-    system_prompt = (
-        "You are a YouTube market analyst.\n\n"
-        "Your job is to:\n"
-        "* Understand the competitive landscape\n"
-        "* Identify real opportunities\n"
-        "* Detect risks\n\n"
-        "STRICT RULES:\n"
-        "* Do NOT generate titles or creative ideas\n"
-        "* Do NOT give generic advice\n"
-        "* Base your reasoning ONLY on provided data\n"
-        "* Be sharp, specific, and slightly brutal\n"
-        "* market_truth must be 1-2 lines max and MUST include:\n"
-        "  - who dominates\n"
-        "  - what works\n"
-        "  - what fails\n"
-        "* content_gaps must be specific and actionable (no generic placeholders)\n"
-        "* Output must match the final JSON format exactly.\n\n"
-        "FINAL JSON FORMAT (STRICT):\n"
-        "{\n"
-        '  "market_truth": "...",\n'
-        '  "dominant_force": "...",\n'
-        '  "opportunity": "...",\n'
-        '  "risk": "...",\n'
-        '  "content_gaps": ["..."],\n'
-        '  "can_small_creator_win": {\n'
-        '    "verdict": "YES / HARD / NO",\n'
-        '    "confidence": "LOW / MEDIUM / HIGH"\n'
-        "  },\n"
-        '  "reasoning": "..." \n'
-        "}"
-    )
-
     # Add transcript sample if available
     transcript_sample = features.get("transcript_sample", "")
 
@@ -152,65 +121,103 @@ def run_analyst_agent(
     entry_barrier = market_summary.get("entry_barrier")
     competition_level = market_summary.get("competition_level")
 
-    user_prompt = (
-        f"Idea:\n{idea}\n\n"
-        "Market Signals:\n"
-        f"* Breakout Summary: {breakout_summary}\n"
-        f"* Creator Distribution: {creator_distribution}\n"
-        f"* Title Patterns: {title_patterns}\n"
-        f"* Content Clusters: {content_clusters}\n"
-        f"* Freshness: {freshness}\n"
-        f"* Velocity Metrics: {velocity_metrics}\n"
-        f"* Consistency: {features.get('consistency')}\n"
-        f"* Market Dynamics: {features.get('market_dynamics')}\n"
-        f"* Anomaly Signals: MONOPOLY={is_monopoly}, PERSONALITY_DRIVEN={is_personality}, FRAGMENTED={is_fragmented}\n\n"
-        "TRANSCRIPT ANALYSIS:\n"
-        f"- Hook Style: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('hook_style', 'Unknown')}\n"
-        f"- Pacing: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('pacing', 'Unknown')}\n"
-        f"- Tone: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('tone', 'Unknown')}\n\n"
-        "CRITICAL SIGNALS:\n"
-        f"- Entry Barrier: {entry_barrier}\n"
-        f"- Competition Level: {competition_level}\n\n"
-        "IMPORTANT SIGNAL INTERPRETATION RULES:\n"
-        "CRITICAL SIGNALS MUST BE CONSIDERED:\n"
-        "- Entry Barrier: HIGH = extremely difficult for new creators\n"
-        "- Competition Level: HIGH = dominated by established players\n"
-        "\n"
-        "DETAILED RULES:\n"
-        "- If Market Summary.entry_barrier = 'HIGH' -> assume difficult for small creators.\n"
-        "- If creator_distribution.small_creator_success_rate = 'LOW' -> assume low breakout chances.\n"
-        "- If Freshness.trend_status = 'STALE' -> assume the trend is declining.\n"
-        "- If breakout_summary.distribution.viral is low (e.g., 0-1) -> assume low upside.\n"
-        "- If velocity_metrics.avg_views_per_day < 1000 -> assume low engagement potential.\n"
-        "- If velocity_metrics.top_vs_avg_ratio > 10 -> assume winner-takes-all market.\n"
-        "- If velocity_metrics.avg_title_length > 60 -> assume clickbait-heavy niche.\n"
-        "- If consistency.consistency = 'HIGH' -> stable market, predictable performance\n"
-        "- If consistency.consistency = 'LOW' -> volatile market, high risk/reward\n"
-        "- If market_dynamics = 'WINNER_TAKES_ALL' -> dominated by top players\n"
-        "- If market_dynamics = 'VOLATILE' -> unpredictable performance swings\n"
-        "- If market_dynamics = 'STABLE' -> predictable performance patterns\n"
-        "- If transcript_analysis.hook_style = 'sensational' → high engagement but low retention\n"
-        "- If transcript_analysis.pacing = 'fast' → appeals to shorter attention spans\n"
-        "- If transcript_analysis.tone = 'direct_address' → builds stronger connection\n"
-        "- If MONOPOLY=True -> market dominated by few players, entry is extremely hard.\n"
-        "- If PERSONALITY_DRIVEN=True -> success depends on personal brand, not content quality.\n"
-        "- If FRAGMENTED=True -> many small players, opportunity exists if you differentiate.\n"
-        "Use these signals STRICTLY in your reasoning.\n\n"
-        "Creator Context:\n"
-        f"* Mode: {creator_mode}\n"
-        f"* Subscribers: {subscriber_count}\n"
-        f"* Channel Size: {channel_size_bucket}\n"
-        f"* Growth Stage: {growth_stage}\n"
-        f"* Performance Ratio: {performance_ratio}\n"
-        f"* Competition Tolerance: {competition_tolerance}\n"
-        "\n"
-        "CREATOR PROFILE ADJUSTMENT RULES:\n"
-        "- If performance_ratio is low (<0.1) → prioritize safer, proven ideas\n"
-        "- If growth_stage is 'early' → avoid high competition niches\n"
-        "- If channel_size_bucket is 'small' → focus on differentiation, not volume\n"
-        "- If competition_tolerance is 'low' → avoid saturated markets\n"
-        "Apply these rules to your analysis."
-    )
+    if creator_mode == "generic":
+        system_prompt = (
+            "You are a YouTube market analyst evaluating ideas for a general audience.\n\n"
+            "Your job is to:\n"
+            "* Understand the competitive landscape\n"
+            "* Identify real opportunities and risks\n\n"
+            "STRICT RULES:\n"
+            "* Do NOT generate titles or creative ideas\n"
+            "* Do NOT give generic advice\n"
+            "* Base your reasoning ONLY on provided data\n"
+            "* market_truth must be 1-2 lines max\n"
+            "* content_gaps must be specific\n\n"
+            "STRICT FORMATTING RULE: Do not write essays. Use very simple words. Maximum 15 words per sentence. "
+            "Never use academic jargon. Give direct, punchy, actionable facts."
+        )
+        user_prompt = (
+            f"Idea:\n{idea}\n\n"
+            "Market Signals:\n"
+            f"* Breakout Summary: {breakout_summary}\n"
+            f"* Creator Distribution: {creator_distribution}\n"
+            f"* Title Patterns: {title_patterns}\n"
+            f"* Content Clusters: {content_clusters}\n"
+            f"* Freshness: {freshness}\n"
+            f"* Velocity Metrics: {velocity_metrics}\n"
+            f"* Consistency: {features.get('consistency')}\n"
+            f"* Market Dynamics: {features.get('market_dynamics')}\n"
+            f"* Anomaly Signals: MONOPOLY={is_monopoly}, PERSONALITY={is_personality}, FRAGMENTED={is_fragmented}\n\n"
+            "TRANSCRIPT ANALYSIS:\n"
+            f"- Hook Style: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('hook_style')}\n"
+            f"- Pacing: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('pacing')}\n"
+            f"- Tone: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('tone')}\n\n"
+            "CRITICAL SIGNALS:\n"
+            f"- Entry Barrier: {entry_barrier}\n"
+            f"- Competition Level: {competition_level}\n\n"
+            "Evaluate this idea purely on general market data."
+        )
+    else:
+        # Dynamically build context to handle empty frontend fields safely
+        context_parts = [
+            f"* Channel Size: {channel_size_bucket} ({subscriber_count} subs)",
+            f"* Growth Stage: {growth_stage}",
+            f"* Performance Ratio: {performance_ratio}",
+            f"* Competition Tolerance: {competition_tolerance}"
+        ]
+        if creator_profile and creator_profile.strengths:
+            context_parts.append(f"* Strengths: {', '.join(creator_profile.strengths)}")
+        if creator_profile and creator_profile.weaknesses:
+            context_parts.append(f"* Weaknesses: {', '.join(creator_profile.weaknesses)}")
+        if creator_profile and creator_profile.interests:
+            context_parts.append(f"* Interests: {', '.join(creator_profile.interests)}")
+        if creator_profile and creator_profile.recent_videos:
+            past_vids_str = json.dumps([v.model_dump() for v in creator_profile.recent_videos])
+            context_parts.append(f"* Past Video Performance: {past_vids_str}")
+            
+        dynamic_creator_context = "\n".join(context_parts)
+
+        system_prompt = (
+            "You are a private YouTube market analyst for a specific creator.\n\n"
+            "Your job is to evaluate if the market is safe or hostile for THIS creator's size, based on their explicit skills, past videos, and the content mode.\n\n"
+            "CRITICAL STRATEGY RULES BASED ON CONTENT MODE:\n"
+            "1. If content_mode is 'SEARCH' (Tutorials, Tech, Finance): Competition is bad. Niche down. Find the specific gap big channels ignored. Solve a specific problem.\n"
+            "2. If content_mode is 'BROWSE' (Vlogs, Food, Challenges, Entertainment): Competition is GOOD. It means high demand. Do NOT niche down. Instead, maximize the emotional hook, pacing, and visual curiosity. Beat them with better angles, not smaller niches.\n\n"
+            "STRICT RULES:\n"
+            "* Base your reasoning on the creator's channel size and competition tolerance.\n"
+            "* market_truth must be 1-2 lines max\n"
+            "* content_gaps must be specific\n\n"
+            "STRICT FORMATTING RULE: Do not write essays. Use very simple words. Maximum 15 words per sentence. "
+            "Never use academic jargon. Give direct, punchy, actionable facts."
+        )
+        user_prompt = (
+            f"Idea:\n{idea}\n"
+            f"Content Mode: {content_mode}\n\n"
+            "Market Signals:\n"
+            f"* Breakout Summary: {breakout_summary}\n"
+            f"* Creator Distribution: {creator_distribution}\n"
+            f"* Title Patterns: {title_patterns}\n"
+            f"* Content Clusters: {content_clusters}\n"
+            f"* Freshness: {freshness}\n"
+            f"* Velocity Metrics: {velocity_metrics}\n"
+            f"* Consistency: {features.get('consistency')}\n"
+            f"* Market Dynamics: {features.get('market_dynamics')}\n"
+            f"* Anomaly Signals: MONOPOLY={is_monopoly}, PERSONALITY={is_personality}, FRAGMENTED={is_fragmented}\n\n"
+            "TRANSCRIPT ANALYSIS:\n"
+            f"- Hook Style: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('hook_style')}\n"
+            f"- Pacing: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('pacing')}\n"
+            f"- Tone: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('tone')}\n\n"
+            "CRITICAL SIGNALS:\n"
+            f"- Entry Barrier: {entry_barrier}\n"
+            f"- Competition Level: {competition_level}\n\n"
+            "Creator Context:\n"
+            f"{dynamic_creator_context}\n\n"
+            "CREATOR PROFILE ADJUSTMENT RULES:\n"
+            "- If performance_ratio is low (<0.1) → prioritize safer ideas\n"
+            "- If channel_size_bucket is 'small' → focus on differentiation\n"
+            "- If competition_tolerance is 'low' → avoid saturated markets\n"
+            "Apply these rules to your analysis."
+        )
 
     model = genai.GenerativeModel(
         llm_service._MODEL_NAME,  # reuse existing model name
@@ -288,27 +295,36 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class PastVideo(BaseModel):
+    title: str
+    views: int
+    format: str
+
+
 class CreatorProfile(BaseModel):
-    channel_id: Optional[str]
-    niche: Optional[str]
-    subscriber_count: Optional[int]
-    avg_views: Optional[int]
-    recent_videos: Optional[List[str]] = Field(default_factory=list)
+    channel_id: Optional[str] = None
+    niche: Optional[str] = None
+    subscriber_count: Optional[int] = None
+    avg_views: Optional[int] = None
+    strengths: Optional[List[str]] = Field(default_factory=list)
+    weaknesses: Optional[List[str]] = Field(default_factory=list)
+    interests: Optional[List[str]] = Field(default_factory=list)
+    recent_videos: Optional[List[PastVideo]] = Field(default_factory=list)
 
 
 class DerivedCreatorProfile(BaseModel):
-    mode: str  # "generic" or "personalized"
-
-    # raw
+    mode: str
     subscriber_count: Optional[int]
     avg_views: Optional[int]
     niche: Optional[str]
-
-    # derived
-    channel_size_bucket: str  # "small", "growing", "large"
-    growth_stage: str  # "early", "mid", "established"
-    performance_ratio: float  # avg_views / subs (safe division)
-    competition_tolerance: str  # low / medium / high
+    channel_size_bucket: str
+    growth_stage: str
+    performance_ratio: float
+    competition_tolerance: str
+    strengths: List[str]
+    weaknesses: List[str]
+    interests: List[str]
+    recent_videos: List[PastVideo]
 
 
 # ===== END FILE: D:/YtAdvisor.ai/python/creator_profile.py =====
@@ -332,6 +348,10 @@ def build_creator_profile(
             growth_stage="early",
             performance_ratio=1.0,
             competition_tolerance="low",
+            strengths=[],
+            weaknesses=[],
+            interests=[],
+            recent_videos=[],
         )
 
     subs = input_profile.subscriber_count
@@ -372,6 +392,10 @@ def build_creator_profile(
         growth_stage=stage,
         performance_ratio=performance_ratio,
         competition_tolerance=tolerance,
+        strengths=input_profile.strengths or [],
+        weaknesses=input_profile.weaknesses or [],
+        interests=input_profile.interests or [],
+        recent_videos=input_profile.recent_videos or [],
     )
 
 
@@ -1025,6 +1049,7 @@ def analyze(request: IdeaRequest) -> OptimizerAgentOutput:
             is_monopoly=is_monopoly,
             is_personality=is_personality,
             is_fragmented=is_fragmented,
+            content_mode=request.content_mode,
         )
         print({"stage": "main", "action": "analyst_done", "elapsed_s": round(time.monotonic() - t_analyst, 3)})
 
@@ -1033,6 +1058,7 @@ def analyze(request: IdeaRequest) -> OptimizerAgentOutput:
             request.idea,
             analyst_output,
             derived_profile,
+            content_mode=request.content_mode,
         )
         print({"stage": "main", "action": "strategist_done", "elapsed_s": round(time.monotonic() - t_strategist, 3)})
         # Stored for now; do not merge into the strategy response yet.
@@ -1043,6 +1069,7 @@ def analyze(request: IdeaRequest) -> OptimizerAgentOutput:
             analyst_output,
             strategist_output,
             derived_profile,
+            content_mode=request.content_mode,
         )
 
         print({
@@ -1070,6 +1097,7 @@ from creator_profile import CreatorProfile
 
 class IdeaRequest(BaseModel):
     idea: str
+    content_mode: str = "SEARCH"  # "SEARCH" or "BROWSE"
     creator_profile: Optional[CreatorProfile] = None
 
 
@@ -1211,7 +1239,8 @@ class PerformanceOutlook(BaseModel):
     reason: str
 
 
-class OptimizerAgentOutput(BaseModel):
+class OptimizerLLMOutput(BaseModel):
+    executive_summary: str
     key_insight: str
     final_verdict: FinalVerdict
     execution_plan: ExecutionPlan
@@ -1219,8 +1248,11 @@ class OptimizerAgentOutput(BaseModel):
     avoid: List[str]
     performance_outlook: PerformanceOutlook
     why_this_will_work: str
+
+
+class OptimizerAgentOutput(OptimizerLLMOutput):
     gap_exploited: Optional[str] = None
-    is_reliable: bool
+    is_reliable: bool = True
     warning: Optional[str] = None
 
 
@@ -1229,6 +1261,7 @@ def run_optimizer_agent(
     analyst_output: dict,
     strategist_output: dict,
     creator_profile: Optional[DerivedCreatorProfile],
+    content_mode: str = "SEARCH",
 ) -> dict:
     print("[optimizer] starting...")
     t0 = time.monotonic()
@@ -1246,87 +1279,71 @@ def run_optimizer_agent(
         growth_stage = creator_profile.growth_stage
         performance_ratio = creator_profile.performance_ratio
 
-    system_prompt = (
-        "You are a YouTube execution expert.\n\n"
-        "Your job is to:\n"
-        "* Convert strategy into clear actions\n"
-        "* Decide if the idea is worth pursuing\n"
-        "* Make output practical and decisive\n\n"
-        "STRICT RULES:\n"
-        "* Be direct and decisive\n"
-        "* Avoid generic advice\n"
-        "* Focus on execution, not theory\n\n"
-        "DECISION AUTHORITY RULE:\n"
-        "* You MUST make a clear decision in final_verdict.decision: GO / MODIFY / AVOID.\n"
-        "* Do NOT be neutral or vague.\n"
-        "* Do NOT hedge with uncertainty.\n"
-        "* If you are unsure, choose MODIFY and explain why.\n\n"
-        "TITLE QUALITY RULE:\n"
-        "* title must create curiosity OR a strong benefit.\n"
-        "* title must NOT be generic.\n"
-        "* title must NOT just repeat the dominant pattern from the niche.\n\n"
-        "HOOK QUALITY RULE:\n"
-        "* hook must create tension in the first sentence.\n"
-        "* hook must NOT be explanatory.\n"
-        "* hook must NOT start with 'In this video...'.\n\n"
-        "AVOID RULE:\n"
-        "* avoid must include at least 1 common mistake in this niche.\n"
-        "* avoid must include at least 1 mistake that is specific to THIS idea.\n\n"
-        "PERFORMANCE OUTLOOK RULE:\n"
-        "* performance_outlook.reason must explain causally why potential is high/low.\n"
-        "* Reference competition level and observed patterns from the analyst/strategist context.\n\n"
-        "KEY INSIGHT:\n"
-        "* key_insight must be exactly 1 line and feel like a premium, memorable summary.\n\n"
-        "WHY THIS WILL WORK:\n"
-        "* Provide a clear causal chain:\n"
-        "  gap → differentiation → CTR → retention → growth\n"
-        "* Must NOT be generic\n\n"
-        "SELF-CHECK QUALITY VALIDATION:\n"
-        "Before finalizing your output, you MUST perform this self-check:\n"
-        "- If title feels generic → rewrite it to be more specific and compelling\n"
-        "- If hook lacks tension → rewrite it to create immediate curiosity\n"
-        "- If advice is obvious → rewrite it to provide non-obvious insights\n"
-        "- If thumbnail_concept is vague → rewrite it to be visually specific\n"
-        "- If video_structure is generic → rewrite it to include unique elements\n"
-        "- If next_moves feel generic → rewrite them to be actionable and specific\n"
-        "Only after passing this self-check should you finalize your response.\n\n"
-        "GAP ENFORCEMENT RULE:\n"
-        "* You MUST use strategist_output.gap_exploited\n"
-        "* Execution MUST clearly reflect this gap\n"
-        "* If not → output is INVALID\n"
-        "* why_this_will_work MUST explicitly reference gap\n\n"
-        "ANALYST OVERRIDE RULE:\n"
-        "* If analyst_output indicates:\n"
-        "  - low demand\n"
-        "  - high competition\n"
-        "  - high risk\n"
-        "→ you MUST reflect that in final_verdict\n"
-        "* You cannot contradict analyst unless explicitly justified."
-    )
+    if creator_mode == "generic":
+        system_prompt = (
+            "You are a fast, decisive YouTube execution expert for the general market.\n\n"
+            "Your job is to convert strategy into a clear action plan.\n\n"
+            "DECISION AUTHORITY RULE:\n"
+            "* You MUST make a clear decision in final_verdict.decision: GO / MODIFY / AVOID.\n"
+            "* title must create curiosity and NOT be generic.\n"
+            "* hook must create tension in the first sentence.\n"
+            "* executive_summary must be exactly 1-2 punchy sentences.\n\n"
+            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. "
+            "Never use academic jargon. Give direct, punchy, actionable facts. Keep titles under 60 characters."
+        )
+        user_prompt = (
+            f"Idea:\n{idea}\n\n"
+            "Analyst Output:\n"
+            f"{json.dumps(analyst_output, indent=2)}\n\n"
+            "Strategist Output:\n"
+            f"{json.dumps(strategist_output, indent=2)}\n\n"
+            "Evaluate the execution plan for a general audience."
+        )
+    else:
+        # Dynamically build context to handle empty frontend fields safely
+        context_parts = [
+            f"* Channel Size: {channel_size_bucket}",
+            f"* Growth Stage: {growth_stage}",
+            f"* Performance Ratio: {performance_ratio}",
+            f"* Competition Tolerance: {competition_tolerance}"
+        ]
+        if creator_profile and creator_profile.strengths:
+            context_parts.append(f"* Strengths: {', '.join(creator_profile.strengths)}")
+        if creator_profile and creator_profile.weaknesses:
+            context_parts.append(f"* Weaknesses: {', '.join(creator_profile.weaknesses)}")
+        if creator_profile and creator_profile.interests:
+            context_parts.append(f"* Interests: {', '.join(creator_profile.interests)}")
+        if creator_profile and creator_profile.recent_videos:
+            past_vids_str = json.dumps([v.model_dump() for v in creator_profile.recent_videos])
+            context_parts.append(f"* Past Video Performance: {past_vids_str}")
+            
+        dynamic_creator_context = "\n".join(context_parts)
 
-    user_prompt = (
-        f"Idea:\n{idea}\n\n"
-        "Analyst Output:\n"
-        f"{json.dumps(analyst_output, indent=2)}\n\n"
-        "Strategist Output:\n"
-        f"{json.dumps(strategist_output, indent=2)}\n\n"
-        "Creator Context:\n"
-        f"* Mode: {creator_mode}\n"
-        f"* Channel Size: {channel_size_bucket}\n"
-        f"* Growth Stage: {growth_stage}\n"
-        f"* Performance Ratio: {performance_ratio}\n"
-        f"* Competition Tolerance: {competition_tolerance}\n"
-        f"* Analyst Reasoning: {analyst_output.get('reasoning')}\n"
-        f"* Strategist Reasoning: {strategist_output.get('reasoning')}\n"
-        f"* Gap To Exploit: {strategist_output.get('gap_exploited')}\n"
-        "\n"
-        "CREATOR PROFILE ADJUSTMENT RULES:\n"
-        "- If performance_ratio is low (<0.1) → prioritize safer, proven ideas\n"
-        "- If growth_stage is 'early' → avoid high competition niches\n"
-        "- If channel_size_bucket is 'small' → focus on differentiation, not volume\n"
-        "- If competition_tolerance is 'low' → avoid saturated markets\n"
-        "Apply these rules to your execution plan."
-    )
+        system_prompt = (
+            "You are a brutally honest, elite YouTube consultant.\n\n"
+            "Your job is to build a highly personalized execution plan based on the creator's actual skills, past videos, and the content mode.\n\n"
+            "CRITICAL STRATEGY RULES BASED ON CONTENT MODE:\n"
+            "1. If content_mode is 'SEARCH' (Tutorials, Tech, Finance): Competition is bad. Niche down. Find the specific gap big channels ignored. Solve a specific problem.\n"
+            "2. If content_mode is 'BROWSE' (Vlogs, Food, Challenges, Entertainment): Competition is GOOD. It means high demand. Do NOT niche down. Instead, maximize the emotional hook, pacing, and visual curiosity. Beat them with better angles, not smaller niches.\n\n"
+            "PERSONALIZATION RULES:\n"
+            "* Look at their Past Video Performance (views and format). If their past videos get 10 views doing 'indoor vlogs', do NOT let them do a massive high-budget stunt. Force them to adapt the viral idea to fit their current budget and skill level.\n"
+            "* Use their 'Strengths' to give them an unfair advantage.\n"
+            "* Protect them from their 'Weaknesses'.\n"
+            "* executive_summary must directly call out their skill gap or strength.\n\n"
+            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. Give direct, punchy, actionable facts."
+        )
+        
+        user_prompt = (
+            f"Idea:\n{idea}\n"
+            f"Content Mode: {content_mode}\n\n"
+            "Analyst Output:\n"
+            f"{json.dumps(analyst_output, indent=2)}\n\n"
+            "Strategist Output:\n"
+            f"{json.dumps(strategist_output, indent=2)}\n\n"
+            "Creator Context (CRITICAL):\n"
+            f"{dynamic_creator_context}\n\n"
+            "Build an execution plan that matches their exact skill level and the content mode rules."
+        )
 
     model = genai.GenerativeModel(
         llm_service._MODEL_NAME,
@@ -1339,12 +1356,14 @@ def run_optimizer_agent(
             generation_config=genai.GenerationConfig(
                 temperature=0.7,
                 response_mime_type="application/json",
+                response_schema=OptimizerLLMOutput,
             ),
             timeout_s=60,
         )
     except Exception:
         traceback.print_exc()
         result = {
+            "executive_summary": "System overloaded. Please try again.",
             "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
             "final_verdict": {
                 "decision": "MODIFY",
@@ -1381,7 +1400,7 @@ def run_optimizer_agent(
 
     parsed_successfully = False
     try:
-        parsed = llm_service._parse(raw_text, OptimizerAgentOutput)
+        parsed = llm_service._parse(raw_text, OptimizerLLMOutput)
         result = parsed.model_dump()
         parsed_successfully = True
     except Exception:
@@ -1395,6 +1414,7 @@ def run_optimizer_agent(
         except Exception:
             traceback.print_exc()
             result = {
+                "executive_summary": "System parsing failed. Please try again.",
                 "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
                 "final_verdict": {
                     "decision": "MODIFY",
@@ -1422,26 +1442,17 @@ def run_optimizer_agent(
     
     result["is_reliable"] = parsed_successfully
     
-    # Post-gap validation - check actual usage, not just presence
+    # Manually copy the gap from the Strategist so it doesn't show as null
+    result["gap_exploited"] = strategist_output.get("gap_exploited", "Unknown")
+    
     if parsed_successfully:
-        gap = strategist_output.get("gap_exploited", "").lower()
-        execution_text = json.dumps(result).lower()
-        
-        if gap and gap not in execution_text:
-            result["is_reliable"] = False
-            result["why_this_will_work"] = "Gap not reflected in execution."
-        elif result.get("gap_exploited") == "Unknown":
-            result["is_reliable"] = False
-            result["why_this_will_work"] = "Gap validation failed: no specific gap identified."
-        
         # Analyst override enforcement
-        analyst_win = analyst_output.get("can_small_creator_win", {}).get("verdict", "")
-        decision = result.get("final_verdict", {}).get("decision", "")
+        analyst_win = str(analyst_output.get("can_small_creator_win", {}).get("verdict", "")).upper()
+        decision = str(result.get("final_verdict", {}).get("decision", "")).upper()
         
-        if analyst_win == "NO" and decision == "GO":
+        if "NO" in analyst_win and decision == "GO":
             result["final_verdict"]["decision"] = "MODIFY"
-            result["final_verdict"]["reason"] = "Adjusted due to analyst indicating low feasibility."
-            result["is_reliable"] = False
+            result["final_verdict"]["reason"] = "Adjusted because analyst flagged low feasibility."
 
     # Failure escalation system
     if not result.get("is_reliable", True):
@@ -1494,6 +1505,7 @@ def run_strategist_agent(
     idea: str,
     analyst_output: dict,
     creator_profile: Optional[DerivedCreatorProfile],
+    content_mode: str = "SEARCH",
 ) -> dict:
     print("[strategist] starting...")
     t0 = time.monotonic()
@@ -1511,65 +1523,77 @@ def run_strategist_agent(
         growth_stage = creator_profile.growth_stage
         performance_ratio = creator_profile.performance_ratio
 
-    system_prompt = (
-        "You are a YouTube content strategist.\n\n"
-        "Your job is to:\n"
-        "* Turn market insights into winning video ideas\n"
-        "* Create strong positioning and angles\n"
-        "* Exploit gaps and weaknesses\n\n"
-        "STRICT RULES:\n"
-        "* Do NOT repeat analysis\n"
-        "* Do NOT give generic advice\n"
-        "* Do NOT re-analyze the market.\n"
-        "* Focus on DIFFERENTIATION.\n"
-        "* Your strategy MUST be based on contrast.\n"
-        "* Identify what most creators are doing.\n"
-        "* Then deliberately propose a different angle.\n"
-        "* If your idea sounds similar to existing content, it is WRONG.\n\n"
-        "MANDATORY: CONTENT GAP EXPLOITATION\n"
-        "* Your strategy MUST directly exploit at least one content gap from the analysis.\n"
-        "* If you do not use a content gap, your strategy is INVALID.\n"
-        "* Explicitly reference which content gap you are exploiting.\n"
-        "* Your differentiation_strategy must explain HOW you exploit the gap.\n"
-        "* Your idea_upgrade must be a direct response to the identified gap.\n\n"
-        "MANDATORY GAP TRACEABILITY:\n"
-        "* You MUST explicitly state which content gap you are exploiting.\n"
-        "* gap_exploited must be a direct reference to one of the provided content_gaps.\n"
-        "* differentiation_strategy MUST explain how this gap is exploited.\n"
-        "* If no gap is used, your output is INVALID.\n\n"
-        "RULES FOR OUTPUT FIELDS:\n"
-        "* idea_upgrade must be a FULL improved video concept (not an explanation).\n"
-        "* next_video_ideas must follow a progression (beginner → deeper → viral).\n"
-        "* next_video_ideas must NOT be random; each idea must be clearly different in angle.\n"
-        "* Provide reasoning as a short explanation why this strategy works.\n"
-        "* Keep everything specific, sharp, and strategic.\n"
-    )
+    if creator_mode == "generic":
+        system_prompt = (
+            "You are a general YouTube content strategist.\n\n"
+            "Your job is to turn market insights into winning video angles for a general audience.\n\n"
+            "STRICT RULES:\n"
+            "* Your strategy MUST exploit at least one content gap from the analysis.\n"
+            "* If you do not use a content gap, your strategy is INVALID.\n"
+            "* next_video_ideas must follow a progression (beginner → deeper → viral).\n\n"
+            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. "
+            "No academic jargon. Direct, punchy facts."
+        )
+        user_prompt = (
+            "Idea:\n"
+            f"{idea}\n\n"
+            "Analyst Insights:\n"
+            f"* Market Truth: {analyst_output.get('market_truth')}\n"
+            f"* Dominant Force: {analyst_output.get('dominant_force')}\n"
+            f"* Opportunity: {analyst_output.get('opportunity')}\n"
+            f"* Risk: {analyst_output.get('risk')}\n"
+            f"* Content Gaps: {analyst_output.get('content_gaps')}\n"
+            f"* Can Win: {analyst_output.get('can_small_creator_win')}\n"
+            f"* Reasoning: {analyst_output.get('reasoning')}\n"
+        )
+    else:
+        # Dynamically build context to handle empty frontend fields safely
+        context_parts = [
+            f"* Channel Size: {channel_size_bucket}",
+            f"* Growth Stage: {growth_stage}",
+            f"* Performance Ratio: {performance_ratio}",
+            f"* Competition Tolerance: {competition_tolerance}"
+        ]
+        if creator_profile and creator_profile.strengths:
+            context_parts.append(f"* Strengths: {', '.join(creator_profile.strengths)}")
+        if creator_profile and creator_profile.weaknesses:
+            context_parts.append(f"* Weaknesses: {', '.join(creator_profile.weaknesses)}")
+        if creator_profile and creator_profile.interests:
+            context_parts.append(f"* Interests: {', '.join(creator_profile.interests)}")
+        if creator_profile and creator_profile.recent_videos:
+            past_vids_str = json.dumps([v.model_dump() for v in creator_profile.recent_videos])
+            context_parts.append(f"* Past Video Performance: {past_vids_str}")
+            
+        dynamic_creator_context = "\n".join(context_parts)
 
-    user_prompt = (
-        "Idea:\n"
-        f"{idea}\n\n"
-        "Analyst Insights:\n"
-        f"* Market Truth: {analyst_output.get('market_truth')}\n"
-        f"* Dominant Force: {analyst_output.get('dominant_force')}\n"
-        f"* Opportunity: {analyst_output.get('opportunity')}\n"
-        f"* Risk: {analyst_output.get('risk')}\n"
-        f"* Content Gaps: {analyst_output.get('content_gaps')}\n"
-        f"* Can Win: {analyst_output.get('can_small_creator_win')}\n"
-        f"* Reasoning: {analyst_output.get('reasoning')}\n\n"
-        "Creator Context:\n"
-        f"* Mode: {creator_mode}\n"
-        f"* Channel Size: {channel_size_bucket}\n"
-        f"* Growth Stage: {growth_stage}\n"
-        f"* Performance Ratio: {performance_ratio}\n"
-        f"* Competition Tolerance: {competition_tolerance}\n"
-        "\n"
-        "CREATOR PROFILE ADJUSTMENT RULES:\n"
-        "- If performance_ratio is low (<0.1) → prioritize safer, proven ideas\n"
-        "- If growth_stage is 'early' → avoid high competition niches\n"
-        "- If channel_size_bucket is 'small' → focus on differentiation, not volume\n"
-        "- If competition_tolerance is 'low' → avoid saturated markets\n"
-        "Apply these rules to your strategy."
-    )
+        system_prompt = (
+            "You are a private YouTube strategist for a specific channel.\n\n"
+            "Your job is to figure out how THIS specific channel can pivot to beat larger competitors based on their explicit skills, past videos, and the content mode.\n\n"
+            "CRITICAL STRATEGY RULES BASED ON CONTENT MODE:\n"
+            "1. If content_mode is 'SEARCH' (Tutorials, Tech, Finance): Competition is bad. Niche down. Find the specific gap big channels ignored. Solve a specific problem.\n"
+            "2. If content_mode is 'BROWSE' (Vlogs, Food, Challenges, Entertainment): Competition is GOOD. It means high demand. Do NOT niche down. Instead, maximize the emotional hook, pacing, and visual curiosity. Beat them with better angles, not smaller niches.\n\n"
+            "STRICT RULES:\n"
+            "* Your strategy MUST exploit at least one content gap from the analysis.\n"
+            "* Focus heavily on differentiation based on their channel size.\n"
+            "* next_video_ideas must be safe and scalable for their current growth stage.\n\n"
+            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. "
+            "No academic jargon. Direct, punchy facts."
+        )
+        user_prompt = (
+            f"Idea:\n{idea}\n"
+            f"Content Mode: {content_mode}\n\n"
+            "Analyst Insights:\n"
+            f"* Market Truth: {analyst_output.get('market_truth')}\n"
+            f"* Dominant Force: {analyst_output.get('dominant_force')}\n"
+            f"* Opportunity: {analyst_output.get('opportunity')}\n"
+            f"* Risk: {analyst_output.get('risk')}\n"
+            f"* Content Gaps: {analyst_output.get('content_gaps')}\n"
+            f"* Can Win: {analyst_output.get('can_small_creator_win')}\n"
+            f"* Reasoning: {analyst_output.get('reasoning')}\n\n"
+            "Creator Context:\n"
+            f"{dynamic_creator_context}\n\n"
+            "Apply these creator constraints to your strategy."
+        )
 
     model = genai.GenerativeModel(
         llm_service._MODEL_NAME,
