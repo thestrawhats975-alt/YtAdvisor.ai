@@ -1,152 +1,109 @@
-from __future__ import annotations
-
 import json
 import time
 import traceback
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import google.generativeai as genai
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from creator_profile import DerivedCreatorProfile
+from api_models import AgentContext
 import llm_service
 
 
+class TitleVariantItem(BaseModel):
+    title: str
+    psychology_tag: str  # Must be exactly: "CURIOSITY", "FEAR", or "ASPIRATION"
+
+
 class StrategistAgentOutput(BaseModel):
-    positioning: str
-    content_angle: str
-    idea_upgrade: str
-    differentiation_strategy: str
-    gap_exploited: str
-    next_video_ideas: List[str]
-    reasoning: str
+    suggested_title: str
+    title_psychology: str
+    title_alternatives: List[TitleVariantItem]  # Exactly 2 items
+    thumbnail_concept: str
+    thumbnail_contrast_rule: str
+    thumbnail_text_overlay: str
+    exact_hook_script: str
+    hook_psychology: str
 
 
 def run_strategist_agent(
-    idea: str,
+    context: AgentContext,
     analyst_output: dict,
-    creator_profile: Optional[DerivedCreatorProfile],
-    content_mode: str = "SEARCH",
+    thumbnail_analysis: Optional[Any] = None,
 ) -> dict:
     print("[strategist] starting...")
     t0 = time.monotonic()
 
-    creator_mode = "generic"
-    channel_size_bucket = "small"
-    competition_tolerance = "low"
-    growth_stage = "early"
-    performance_ratio = 0.0
+    system_prompt = (
+        "Be a YouTube packaging strategist. Your job is to win the click before filming starts\n"
+        "suggested_title: The single best most clickable title. One decisive recommendation. No hedging. Optimised for the content_archetype — if SEARCH_EVERGREEN lead with the exact search phrase, if VIRAL_REACH lead with an emotional trigger, if CORE_AUDIENCE lead with the specific value promise\n"
+        "title_psychology: One sentence naming the SPECIFIC psychological trigger used — e.g. \"exploits the curiosity gap between 'one weekend' and the complexity implied\" — not generic descriptions like \"creates curiosity\"\n"
+        "title_alternatives: Exactly 2 items. Each must have a psychology_tag that is EXACTLY one of: CURIOSITY, FEAR, ASPIRATION — no other values accepted\n"
+        "thumbnail_concept: Specific enough that a creator can open Canva and execute in 10 minutes with zero creative decisions remaining. Include: what is shown, layout position, color mood, any text on the image, and what is deliberately excluded\n"
+        "thumbnail_contrast_rule: Must directly reference the competitor thumbnails provided. State specifically what colors, composition, and visual elements to use BECAUSE they are absent from the current search results page thumbnails\n"
+        "thumbnail_text_overlay: The exact words to overlay on the thumbnail. Maximum 4 words. If no overlay is recommended return an empty string — never say \"none\" or \"N/A\"\n"
+        "exact_hook_script: The complete word-for-word script for the first 15 seconds. This is what the creator reads aloud. Not a description of what to say — the actual words. Should create immediate tension or curiosity\n"
+        "hook_psychology: One sentence explaining why THESE specific words create tension — must reference the actual hook content directly not generically\n"
+        "Base tone on content_archetype from analyst: CORE_AUDIENCE = authoritative educational tone, VIRAL_REACH = emotional dramatic tone, SEARCH_EVERGREEN = direct practical tone\n"
+        "No generic YouTube advice. Everything must be specific to this exact video idea and competitor landscape"
+    )
 
-    if creator_profile is not None:
-        creator_mode = creator_profile.mode
-        channel_size_bucket = creator_profile.channel_size_bucket
-        competition_tolerance = creator_profile.competition_tolerance
-        growth_stage = creator_profile.growth_stage
-        performance_ratio = creator_profile.performance_ratio
+    creator_dna = context.request.creator_dna
+    user_prompt = (
+        "VIDEO IDEA:\n"
+        f"{context.request.video_idea}\n\n"
+        "CREATOR DNA:\n"
+        f"{creator_dna if creator_dna is not None else 'Not provided'}\n\n"
+        "COMPETITOR THUMBNAILS — USE THESE TO WRITE CONTRAST RULE:\n"
+        f"{json.dumps(context.competitors.thumbnails, indent=2)}\n\n"
+        "COMPETITOR COMMENTS:\n"
+        f"{context.competitors.top_comments}\n\n"
+        "ANALYST INTELLIGENCE:\n"
+        f"{json.dumps(analyst_output, indent=2)}\n"
+    )
 
-    if creator_mode == "generic":
-        system_prompt = (
-            "You are a general YouTube content strategist.\n\n"
-            "Your job is to turn market insights into winning video angles for a general audience.\n\n"
-            "STRICT RULES:\n"
-            "* Your strategy MUST exploit at least one content gap from the analysis.\n"
-            "* If you do not use a content gap, your strategy is INVALID.\n"
-            "* next_video_ideas must follow a progression (beginner → deeper → viral).\n\n"
-            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. "
-            "No academic jargon. Direct, punchy facts."
-        )
-        user_prompt = (
-            "Idea:\n"
-            f"{idea}\n\n"
-            "Analyst Insights:\n"
-            f"* Market Truth: {analyst_output.get('market_truth')}\n"
-            f"* Dominant Force: {analyst_output.get('dominant_force')}\n"
-            f"* Opportunity: {analyst_output.get('opportunity')}\n"
-            f"* Risk: {analyst_output.get('risk')}\n"
-            f"* Content Gaps: {analyst_output.get('content_gaps')}\n"
-            f"* Can Win: {analyst_output.get('can_small_creator_win')}\n"
-            f"* Reasoning: {analyst_output.get('reasoning')}\n"
-        )
-    else:
-        # Dynamically build context to handle empty frontend fields safely
-        context_parts = [
-            f"* Channel Size: {channel_size_bucket}",
-            f"* Growth Stage: {growth_stage}",
-            f"* Performance Ratio: {performance_ratio}",
-            f"* Competition Tolerance: {competition_tolerance}"
-        ]
-        if creator_profile and creator_profile.strengths:
-            context_parts.append(f"* Strengths: {', '.join(creator_profile.strengths)}")
-        if creator_profile and creator_profile.weaknesses:
-            context_parts.append(f"* Weaknesses: {', '.join(creator_profile.weaknesses)}")
-        if creator_profile and creator_profile.interests:
-            context_parts.append(f"* Interests: {', '.join(creator_profile.interests)}")
-        if creator_profile and creator_profile.recent_videos:
-            past_vids_str = json.dumps([v.model_dump() for v in creator_profile.recent_videos])
-            context_parts.append(f"* Past Video Performance: {past_vids_str}")
-            
-        dynamic_creator_context = "\n".join(context_parts)
+    # Append thumbnail visual analysis if available
+    if thumbnail_analysis is not None:
+        from thumbnail_analyzer import thumbnail_analysis_to_prompt_block
 
-        system_prompt = (
-            "You are a private YouTube strategist for a specific channel.\n\n"
-            "Your job is to figure out how THIS specific channel can pivot to beat larger competitors based on their explicit skills, past videos, and the content mode.\n\n"
-            "CRITICAL STRATEGY RULES BASED ON CONTENT MODE:\n"
-            "1. If content_mode is 'SEARCH' (Tutorials, Tech, Finance): Competition is bad. Niche down. Find the specific gap big channels ignored. Solve a specific problem.\n"
-            "2. If content_mode is 'BROWSE' (Vlogs, Food, Challenges, Entertainment): Competition is GOOD. It means high demand. Do NOT niche down. Instead, maximize the emotional hook, pacing, and visual curiosity. Beat them with better angles, not smaller niches.\n\n"
-            "STRICT RULES:\n"
-            "* Your strategy MUST exploit at least one content gap from the analysis.\n"
-            "* Focus heavily on differentiation based on their channel size.\n"
-            "* next_video_ideas must be safe and scalable for their current growth stage.\n\n"
-            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. "
-            "No academic jargon. Direct, punchy facts."
-        )
-        user_prompt = (
-            f"Idea:\n{idea}\n"
-            f"Content Mode: {content_mode}\n\n"
-            "Analyst Insights:\n"
-            f"* Market Truth: {analyst_output.get('market_truth')}\n"
-            f"* Dominant Force: {analyst_output.get('dominant_force')}\n"
-            f"* Opportunity: {analyst_output.get('opportunity')}\n"
-            f"* Risk: {analyst_output.get('risk')}\n"
-            f"* Content Gaps: {analyst_output.get('content_gaps')}\n"
-            f"* Can Win: {analyst_output.get('can_small_creator_win')}\n"
-            f"* Reasoning: {analyst_output.get('reasoning')}\n\n"
-            "Creator Context:\n"
-            f"{dynamic_creator_context}\n\n"
-            "Apply these creator constraints to your strategy."
+        thumbnail_block = thumbnail_analysis_to_prompt_block(thumbnail_analysis)
+        user_prompt += f"\n\n{thumbnail_block}\n"
+        user_prompt += (
+            "\nIMPORTANT: The thumbnail visual analysis above shows what competitor "
+            "thumbnails ACTUALLY look like. Your thumbnail_contrast_rule MUST reference "
+            "these specific visual details — not generic advice. "
+            "Your thumbnail_concept must deliberately avoid the dominant pattern described above.\n"
         )
 
     model = genai.GenerativeModel(
         llm_service._MODEL_NAME,
         system_instruction=system_prompt,
     )
+
     try:
         response = llm_service.generate_content_with_timeout(
             model,
             user_prompt,
             generation_config=genai.GenerationConfig(
-                temperature=0.8,
+                temperature=0.7,
                 response_mime_type="application/json",
                 response_schema=StrategistAgentOutput,
             ),
-            timeout_s=45,
+            timeout_s=90,
         )
     except Exception:
         traceback.print_exc()
-        result = {
-            "positioning": "N/A",
-            "content_angle": "N/A",
-            "idea_upgrade": "N/A",
-            "differentiation_strategy": "N/A",
-            "gap_exploited": "Unknown",
-            "next_video_ideas": [],
-            "reasoning": "LLM request timed out or failed.",
-        }
-        print({
-            "stage": "strategist",
-            "idea": idea,
-            "output": result,
-        })
+        result = StrategistAgentOutput(
+            suggested_title="Insufficient data",
+            title_psychology="Insufficient data",
+            title_alternatives=[],
+            thumbnail_concept="Insufficient data",
+            thumbnail_contrast_rule="Insufficient data",
+            thumbnail_text_overlay="",
+            exact_hook_script="Insufficient data",
+            hook_psychology="Insufficient data",
+        ).model_dump()
+        print({"stage": "strategist", "output": result})
         print(f"[strategist] done in {time.monotonic() - t0:.1f}s")
         return result
 
@@ -157,28 +114,18 @@ def run_strategist_agent(
         result = parsed.model_dump()
     except Exception:
         traceback.print_exc()
-        try:
-            start = raw_text.find("{")
-            end = raw_text.rfind("}")
-            obj = json.loads(raw_text[start : end + 1])
-            result = StrategistAgentOutput.model_validate(obj).model_dump()
-        except Exception:
-            traceback.print_exc()
-            result = {
-                "positioning": "N/A",
-                "content_angle": "N/A",
-                "idea_upgrade": "N/A",
-                "differentiation_strategy": "N/A",
-                "gap_exploited": "Unknown",
-                "next_video_ideas": [],
-                "reasoning": "LLM output could not be parsed reliably.",
-            }
+        result = StrategistAgentOutput(
+            suggested_title="Insufficient data",
+            title_psychology="Insufficient data",
+            title_alternatives=[],
+            thumbnail_concept="Insufficient data",
+            thumbnail_contrast_rule="Insufficient data",
+            thumbnail_text_overlay="",
+            exact_hook_script="Insufficient data",
+            hook_psychology="Insufficient data",
+        ).model_dump()
 
-    print({
-        "stage": "strategist",
-        "idea": idea,
-        "output": result
-    })
+    print({"stage": "strategist", "output": result})
     print(f"[strategist] done in {time.monotonic() - t0:.1f}s")
     return result
 

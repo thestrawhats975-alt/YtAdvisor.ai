@@ -1,138 +1,103 @@
-from __future__ import annotations
-
 import json
 import time
 import traceback
-from typing import List, Optional
+from typing import List
 
 import google.generativeai as genai
 from pydantic import BaseModel
 
-from creator_profile import DerivedCreatorProfile
+from api_models import AgentContext
 import llm_service
 
 
-class FinalVerdict(BaseModel):
-    decision: str  # "GO / MODIFY / AVOID"
-    confidence: str  # "LOW / MEDIUM / HIGH"
+class RetentionTrapItem(BaseModel):
+    moment: str
     reason: str
+    fix: str
 
 
-class ExecutionPlan(BaseModel):
+class NextVideoItem(BaseModel):
     title: str
-    hook: str
-    thumbnail_concept: str
-    video_structure: List[str]
+    strategic_reason: str
+    priority: int  # 1, 2, or 3
 
 
-class PerformanceOutlook(BaseModel):
-    potential: str  # "LOW / MEDIUM / HIGH"
-    risk: str  # "LOW / MEDIUM / HIGH"
-    reason: str
-
-
-class OptimizerLLMOutput(BaseModel):
-    executive_summary: str
-    key_insight: str
-    final_verdict: FinalVerdict
-    execution_plan: ExecutionPlan
-    next_moves: List[str]
-    avoid: List[str]
-    performance_outlook: PerformanceOutlook
-    why_this_will_work: str
-
-
-class OptimizerAgentOutput(OptimizerLLMOutput):
-    gap_exploited: Optional[str] = None
-    is_reliable: bool = True
-    warning: Optional[str] = None
+class OptimizerAgentOutput(BaseModel):
+    final_verdict: str  # Must be exactly: "GO", "MODIFY", or "ABORT"
+    confidence: str  # Must be exactly: "HIGH", "MEDIUM", or "LOW"
+    confidence_reason: str
+    idea_upgrade: str
+    market_context: str
+    performance_benchmark: str
+    performance_outlook: str
+    pacing_timeline: List[str]
+    retention_traps: List[RetentionTrapItem]
+    win_conditions: List[str]
+    fail_conditions: List[str]
+    shorts_test_recommended: bool
+    shorts_test_instruction: str
+    pinned_comment: str
+    community_post_seed: str
+    description_timestamps: str
+    next_video_series: List[NextVideoItem]
+    series_positioning: str
 
 
 def run_optimizer_agent(
-    idea: str,
+    context: AgentContext,
     analyst_output: dict,
     strategist_output: dict,
-    creator_profile: Optional[DerivedCreatorProfile],
-    content_mode: str = "SEARCH",
 ) -> dict:
     print("[optimizer] starting...")
     t0 = time.monotonic()
 
-    creator_mode = "generic"
-    channel_size_bucket = "small"
-    competition_tolerance = "low"
-    growth_stage = "early"
-    performance_ratio = 0.0
-    subscriber_count = 0
+    system_prompt = (
+        "VERDICT RULES:\n\n"
+        "final_verdict must be EXACTLY one of: GO, MODIFY, ABORT. No punctuation. No other values. ABORT replaces AVOID — use ABORT when the market makes success structurally impossible for a small creator regardless of execution quality\n"
+        "confidence must be EXACTLY one of: HIGH, MEDIUM, LOW\n"
+        "confidence_reason: One sentence explaining why this confidence level — must reference specific signals from analyst data\n"
+        "idea_upgrade: A specific reframing of the original idea that increases success probability. Must name the exact pivot e.g. \"Narrow from 'full stack deployment' to 'AWS RDS connection specifically' — the gap competitors left in comments\" — not generic improvement advice\n"
+        "market_context: Exactly two sentences. First sentence: current state of this niche. Second sentence: what that means for timing right now\n"
+        "performance_benchmark: A qualitative relative statement about expected performance — never use absolute view numbers. Examples: \"above channel average for this niche given low competitor quality\", \"below channel average — market too saturated for new entrants\", \"top performer potential if content gaps are filled\"\n"
+        "performance_outlook: One sentence qualitative judgment on expected performance trajectory\n\n"
+        "EXECUTION RULES:\n\n"
+        "pacing_timeline: Minimum 5 items. Must start at 0:00. Strict format for every item: \"MM:SS - Section Title - retention instruction\". The retention instruction is the specific thing to do at that moment to keep viewers watching e.g. \"0:00 - Hook - show the end result first, then explain how\"\n"
+        "retention_traps: Exactly 3 items. Each moment must describe when in THIS TYPE of video viewers typically drop off — inferred from comment complaints and content structure, not fabricated analytics data. Each fix must be concrete and actionable\n"
+        "win_conditions: Exactly 3 items. Direct commands phrased as imperatives. Derived DIRECTLY from competitor top_comments and content_gaps — not generic YouTube advice\n"
+        "fail_conditions: Exactly 3 items. Direct warnings. Also derived from competitor top_comments and content_gaps\n"
+        "shorts_test_recommended: True if satisfaction_risk from analyst_output is 7 or higher, OR if small_creator_verdict from analyst_output is \"AVOID\" or \"HARD\"\n"
+        "shorts_test_instruction: If True — exact description of what the Short should contain (first 60 seconds of the hook script), how long to run it before checking data (48-72 hours), and what metric to look at (retention past 50%). If False — empty string\n\n"
+        "GROWTH RULES:\n\n"
+        "pinned_comment: Exact text to paste — written to drive replies, reference the specific technical topics covered, and invite follow-up questions. Should feel like the creator wrote it not an AI\n"
+        "community_post_seed: Exact text for Community Tab post 24 hours before upload — written to tease the specific insight, not the generic topic. Should end with a question to drive replies\n"
+        "description_timestamps: Pre-written timestamp block derived directly from pacing_timeline. Format exactly as YouTube description timestamps — each line is \"MM:SS Title\"\n"
+        "next_video_series: Exactly 3 items. Priority 1 is highest strategic importance. Each strategic_reason must explain the ALGORITHMIC connection — why the audience that watched this video will search for or click on that next video\n"
+        "series_positioning: One sentence — how this video plus the 3 follow-ups establish the creator as the authority in a specific sub-niche within 30 days"
+    )
 
-    if creator_profile is not None:
-        creator_mode = creator_profile.mode
-        channel_size_bucket = creator_profile.channel_size_bucket
-        competition_tolerance = creator_profile.competition_tolerance
-        growth_stage = creator_profile.growth_stage
-        performance_ratio = creator_profile.performance_ratio
-        subscriber_count = creator_profile.subscriber_count or 0
+    satisfaction_risk = analyst_output.get("satisfaction_risk")
+    small_creator_verdict = analyst_output.get("small_creator_verdict")
 
-    if creator_mode == "generic":
-        system_prompt = (
-            "You are a fast, decisive YouTube execution expert for the general market.\n\n"
-            "Your job is to convert strategy into a clear action plan.\n\n"
-            "DECISION AUTHORITY RULE:\n"
-            "* You MUST make a clear decision in final_verdict.decision: GO / MODIFY / AVOID.\n"
-            "* title must create curiosity and NOT be generic.\n"
-            "* hook must create tension in the first sentence.\n"
-            "* executive_summary must be exactly 1-2 punchy sentences.\n\n"
-            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. "
-            "Never use academic jargon. Give direct, punchy, actionable facts. Keep titles under 60 characters."
-        )
-        user_prompt = (
-            f"Idea:\n{idea}\n\n"
-            "Analyst Output:\n"
-            f"{json.dumps(analyst_output, indent=2)}\n\n"
-            "Strategist Output:\n"
-            f"{json.dumps(strategist_output, indent=2)}\n\n"
-            "Evaluate the execution plan for a general audience."
-        )
-    else:
-        context_parts = [
-            f"* Subscriber Count: {subscriber_count}",
-            f"* Performance Ratio: {performance_ratio}"
-        ]
-        if creator_profile.strengths:
-            context_parts.append(f"* Strengths: {', '.join(creator_profile.strengths)}")
-        if creator_profile.weaknesses:
-            context_parts.append(f"* Weaknesses: {', '.join(creator_profile.weaknesses)}")
-        if creator_profile.recent_videos:
-            past_vids_str = json.dumps([v.model_dump() for v in creator_profile.recent_videos])
-            context_parts.append(f"* Past Video Performance: {past_vids_str}")
-            
-        dynamic_creator_context = "\n".join(context_parts)
-
-        system_prompt = (
-            "You are an elite, ruthless YouTube growth hacker.\n\n"
-            "Your goal is MAXIMAL UPSIDE. Safe videos get zero views. You must find the smartest way for this specific creator to take a big swing and win.\n\n"
-            "THE VIRAL RULES:\n"
-            "1. IDEA PRESERVATION: If the core idea has high viral or CTR potential, DO NOT kill it. Keep the core hook, but mutate the execution to fit the creator's skills.\n"
-            "2. SMART RISK: Do not tell them to play it safe. Tell them how to take a smart risk. If they lack budget, use their strengths (like editing or scripting) to create the same viral feeling.\n"
-            "3. RAW SUBS INTELLIGENCE: Look at their raw subscriber count. If they have 15 subs, focus on wild differentiation to break out. If they have 25,000 subs, focus on leveraging their existing authority. Never call a creator 'small'.\n"
-            "4. FAMILIAR + TWIST: Do not force people into tiny, boring niches just to avoid competition. Take a massive, popular topic and add a weird, hyper-specific twist based on their profile.\n\n"
-            "STRICT FORMATTING RULE: Do not write essays. Use simple words. Maximum 15 words per sentence. Give direct, punchy, actionable facts."
-        )
-        
-        user_prompt = (
-            f"Idea:\n{idea}\n"
-            f"Content Mode: {content_mode}\n\n"
-            "Analyst Output:\n"
-            f"{json.dumps(analyst_output, indent=2)}\n\n"
-            "Creator Context (CRITICAL):\n"
-            f"{dynamic_creator_context}\n\n"
-            "Build a high-upside execution plan. Do not play it safe. Maximize their chance to blow up."
-        )
+    user_prompt = (
+        "REQUEST AND COMPETITOR DATA:\n"
+        f"{json.dumps(context.model_dump(), indent=2)}\n\n"
+        "COMPETITOR COMMENTS — PRIMARY SOURCE OF TRUTH FOR WIN/FAIL CONDITIONS:\n"
+        f"{context.competitors.top_comments}\n\n"
+        "ANALYST OUTPUT:\n"
+        f"{json.dumps(analyst_output, indent=2)}\n\n"
+        "SATISFACTION RISK (used for shorts decision):\n"
+        f"{satisfaction_risk}\n\n"
+        "SMALL CREATOR VERDICT (used for shorts decision):\n"
+        f"{small_creator_verdict}\n\n"
+        "STRATEGIST OUTPUT:\n"
+        f"{json.dumps(strategist_output, indent=2)}\n"
+    )
 
     model = genai.GenerativeModel(
         llm_service._MODEL_NAME,
         system_instruction=system_prompt,
     )
+
     try:
         response = llm_service.generate_content_with_timeout(
             model,
@@ -140,120 +105,89 @@ def run_optimizer_agent(
             generation_config=genai.GenerationConfig(
                 temperature=0.7,
                 response_mime_type="application/json",
-                response_schema=OptimizerLLMOutput,
+                response_schema=OptimizerAgentOutput,
             ),
-            timeout_s=60,
+            timeout_s=90,
         )
     except Exception:
         traceback.print_exc()
-        result = {
-            "executive_summary": "System overloaded. Please try again.",
-            "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
-            "final_verdict": {
-                "decision": "MODIFY",
-                "confidence": "LOW",
-                "reason": "LLM request timed out or failed.",
-            },
-            "execution_plan": {
-                "title": "N/A",
-                "hook": "N/A",
-                "thumbnail_concept": "N/A",
-                "video_structure": [],
-            },
-            "next_moves": [],
-            "avoid": [],
-            "performance_outlook": {
-                "potential": "LOW",
-                "risk": "MEDIUM",
-                "reason": "No reliable execution guidance available.",
-            },
-            "why_this_will_work": "Unable to generate reliable execution plan due to timeout/failure.",
-            "gap_exploited": strategist_output.get("gap_exploited") or "Unknown",
-            "is_reliable": False,
-            "warning": "Low confidence output. Retry recommended.",
-        }
-        print({
-            "stage": "optimizer",
-            "idea": idea,
-            "output": result,
-        })
+        result = OptimizerAgentOutput(
+            final_verdict="MODIFY",
+            confidence="LOW",
+            confidence_reason="Analysis failed — retry recommended",
+            idea_upgrade="Insufficient data",
+            market_context="Insufficient data",
+            performance_benchmark="Insufficient data",
+            performance_outlook="Insufficient data",
+            pacing_timeline=["0:00 - Hook - open with the core value immediately"],
+            retention_traps=[
+                RetentionTrapItem(
+                    moment="Insufficient data",
+                    reason="Insufficient data",
+                    fix="Insufficient data",
+                )
+            ],
+            win_conditions=["Insufficient data"],
+            fail_conditions=["Insufficient data"],
+            shorts_test_recommended=True,
+            shorts_test_instruction="",
+            pinned_comment="Insufficient data",
+            community_post_seed="Insufficient data",
+            description_timestamps="Insufficient data",
+            next_video_series=[
+                NextVideoItem(
+                    title="Insufficient data",
+                    strategic_reason="Insufficient data",
+                    priority=1,
+                )
+            ],
+            series_positioning="Insufficient data",
+        ).model_dump()
+        print({"stage": "optimizer", "output": result})
         print(f"[optimizer] done in {time.monotonic() - t0:.1f}s")
         return result
 
     raw_text = response.text or ""
 
-    parsed_successfully = False
     try:
-        parsed = llm_service._parse(raw_text, OptimizerLLMOutput)
+        parsed = llm_service._parse(raw_text, OptimizerAgentOutput)
         result = parsed.model_dump()
-        parsed_successfully = True
     except Exception:
         traceback.print_exc()
-        try:
-            start = raw_text.find("{")
-            end = raw_text.rfind("}")
-            obj = json.loads(raw_text[start : end + 1])
-            result = OptimizerAgentOutput.model_validate(obj).model_dump()
-            parsed_successfully = True
-        except Exception:
-            traceback.print_exc()
-            result = {
-                "executive_summary": "System parsing failed. Please try again.",
-                "key_insight": "Entry angle exists, but only if you differentiate hard from the default creator playbook.",
-                "final_verdict": {
-                    "decision": "MODIFY",
-                    "confidence": "LOW",
-                    "reason": "LLM output could not be parsed reliably.",
-                },
-                "execution_plan": {
-                    "title": "N/A",
-                    "hook": "N/A",
-                    "thumbnail_concept": "N/A",
-                    "video_structure": [],
-                },
-                "next_moves": [],
-                "avoid": [],
-                "performance_outlook": {
-                    "potential": "LOW",
-                    "risk": "MEDIUM",
-                    "reason": "No reliable execution guidance available.",
-                },
-                "why_this_will_work": "Unable to generate reliable execution plan due to parsing failure.",
-                "gap_exploited": "Unknown",
-                "is_reliable": False,
-                "warning": "Low confidence output. Retry recommended.",
-            }
-    
-    result["is_reliable"] = parsed_successfully
-    
-    # Manually copy the gap from the Strategist so it doesn't show as null
-    result["gap_exploited"] = strategist_output.get("gap_exploited", "Unknown")
-    
-    if parsed_successfully:
-        # Analyst override enforcement
-        analyst_win = str(analyst_output.get("can_small_creator_win", {}).get("verdict", "")).upper()
-        decision = str(result.get("final_verdict", {}).get("decision", "")).upper()
-        
-        if "NO" in analyst_win and decision == "GO":
-            result["final_verdict"]["decision"] = "MODIFY"
-            result["final_verdict"]["reason"] = "Adjusted because analyst flagged low feasibility."
+        result = OptimizerAgentOutput(
+            final_verdict="MODIFY",
+            confidence="LOW",
+            confidence_reason="Analysis failed — retry recommended",
+            idea_upgrade="Insufficient data",
+            market_context="Insufficient data",
+            performance_benchmark="Insufficient data",
+            performance_outlook="Insufficient data",
+            pacing_timeline=["0:00 - Hook - open with the core value immediately"],
+            retention_traps=[
+                RetentionTrapItem(
+                    moment="Insufficient data",
+                    reason="Insufficient data",
+                    fix="Insufficient data",
+                )
+            ],
+            win_conditions=["Insufficient data"],
+            fail_conditions=["Insufficient data"],
+            shorts_test_recommended=True,
+            shorts_test_instruction="",
+            pinned_comment="Insufficient data",
+            community_post_seed="Insufficient data",
+            description_timestamps="Insufficient data",
+            next_video_series=[
+                NextVideoItem(
+                    title="Insufficient data",
+                    strategic_reason="Insufficient data",
+                    priority=1,
+                )
+            ],
+            series_positioning="Insufficient data",
+        ).model_dump()
 
-    # Failure escalation system
-    if not result.get("is_reliable", True):
-        # Always default to MODIFY for unreliable outputs
-        if "final_verdict" in result and "decision" in result["final_verdict"]:
-            if result["final_verdict"]["decision"] == "GO":
-                result["final_verdict"]["decision"] = "MODIFY"
-                result["final_verdict"]["reason"] = "Low confidence output. Retry recommended."
-        
-        # Add warning for frontend
-        result["warning"] = "Low confidence output. Retry recommended."
-
-    print({
-        "stage": "optimizer",
-        "idea": idea,
-        "output": result
-    })
+    print({"stage": "optimizer", "output": result})
     print(f"[optimizer] done in {time.monotonic() - t0:.1f}s")
     return result
 

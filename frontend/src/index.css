@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
+  }
+}
+
+@layer components {
+  .laser-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #FF0000, transparent);
+    box-shadow: 0 0 15px #FF0000;
+  }
+  .spectral-glow {
+    background: radial-gradient(circle at 50% 50%, rgba(255, 180, 168, 0.05) 0%, transparent 70%);
+  }
+
+  .animate-red-pulse {
+    animation: red-glow-pulse 3s ease-in-out infinite;
+  }
+
+  .pipeline-node-1 { animation: c1-active var(--cycle-duration) infinite; border-color: var(--inactive-silver); color: var(--inactive-silver); }
+  .pipeline-tag-1 { animation: tag1-active var(--cycle-duration) infinite; background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+  
+  .pipeline-node-2 { animation: c2-active var(--cycle-duration) infinite; border-color: var(--inactive-silver); color: var(--inactive-silver); }
+  .pipeline-tag-2 { animation: tag2-active var(--cycle-duration) infinite; background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+  
+  .pipeline-node-3 { animation: c3-active var(--cycle-duration) infinite; border-color: var(--inactive-silver); color: var(--inactive-silver); }
+  .pipeline-tag-3 { animation: tag3-active var(--cycle-duration) infinite; background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+
+  .pipeline-line-pulse {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--neon-red), transparent);
+    filter: brightness(2) drop-shadow(0 0 15px var(--neon-red)) drop-shadow(0 0 30px var(--neon-red));
+    box-shadow: 0 0 20px 2px var(--neon-red);
+    opacity: 0;
+    z-index: 10;
+  }
+  .pulse-1 { animation: line1-pulse var(--cycle-duration) infinite; }
+  .pulse-2 { animation: line2-pulse var(--cycle-duration) infinite; }
+}
+
+:root {
+  --inactive-silver: #E5E2E1;
+  --neon-red: #FF0000;
+  --neon-green: #39FF14;
+  --cycle-duration: 19.5s;
+}
+
+@keyframes red-glow-pulse {
+  0%, 100% { text-shadow: 0 0 5px rgba(255, 0, 0, 0); color: #e5e2e1; }
+  50% { text-shadow: 0 0 15px #FF0000, 0 0 25px #FF0000; color: #FF0000; }
+}
+
+@keyframes c1-active {
+  0%, 5% { color: var(--inactive-silver); border-color: var(--inactive-silver); box-shadow: none; }
+  10%, 25% { color: var(--neon-red); border-color: var(--neon-red); box-shadow: 0 0 25px 5px var(--neon-red), inset 0 0 10px var(--neon-red); }
+  30%, 100% { color: var(--inactive-silver); border-color: var(--inactive-silver); box-shadow: none; }
+}
+@keyframes tag1-active {
+  0%, 5% { background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+  10%, 25% { background-color: rgba(255, 0, 0, 0.2); color: var(--neon-red); } 
+  30%, 100% { background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+}
+
+@keyframes line1-pulse {
+  0%, 25% { top: -100%; opacity: 0; }
+  30% { opacity: 1; }
+  35% { top: 100%; opacity: 0; }
+  36%, 100% { top: -100%; opacity: 0; }
+}
+
+@keyframes c2-active {
+  0%, 38% { color: var(--inactive-silver); border-color: var(--inactive-silver); box-shadow: none; }
+  43%, 58% { color: var(--neon-red); border-color: var(--neon-red); box-shadow: 0 0 25px 5px var(--neon-red), inset 0 0 10px var(--neon-red); }
+  63%, 100% { color: var(--inactive-silver); border-color: var(--inactive-silver); box-shadow: none; }
+}
+@keyframes tag2-active {
+  0%, 38% { background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+  43%, 58% { background-color: rgba(255, 0, 0, 0.2); color: var(--neon-red); }
+  63%, 100% { background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+}
+
+@keyframes line2-pulse {
+  0%, 58% { top: -100%; opacity: 0; }
+  63% { opacity: 1; }
+  68% { top: 100%; opacity: 0; }
+  69%, 100% { top: -100%; opacity: 0; }
+}
+
+@keyframes c3-active {
+  0%, 71% { color: var(--inactive-silver); border-color: var(--inactive-silver); box-shadow: none; }
+  76% { color: var(--neon-red); border-color: var(--neon-red); box-shadow: 0 0 25px 5px var(--neon-red), inset 0 0 10px var(--neon-red); }
+  81%, 100% { color: var(--neon-green); border-color: var(--neon-green); box-shadow: 0 0 25px 5px var(--neon-green), inset 0 0 10px var(--neon-green); }
+}
+@keyframes tag3-active {
+  0%, 71% { background-color: rgba(229, 226, 225, 0.1); color: var(--inactive-silver); }
+  76% { background-color: rgba(255, 0, 0, 0.2); color: var(--neon-red); }
+  81%, 100% { background-color: rgba(57, 255, 20, 0.2); color: var(--neon-green); }
+}

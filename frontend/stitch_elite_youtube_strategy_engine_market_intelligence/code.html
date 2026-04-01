@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DIMENZIQ | Market Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;family=Space+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed": "#410000",
+              "tertiary-fixed-dim": "#ffb4a8",
+              "tertiary": "#ffb4a8",
+              "surface-container-low": "#1c1b1b",
+              "primary-container": "#ff5540",
+              "on-surface-variant": "#ebbbb4",
+              "error-container": "#93000a",
+              "surface-variant": "#353534",
+              "on-tertiary-fixed-variant": "#81281d",
+              "outline-variant": "#603e39",
+              "secondary-fixed-dim": "#ffb4a8",
+              "surface-container-lowest": "#0e0e0e",
+              "surface-container-highest": "#353534",
+              "outline": "#b18780",
+              "error": "#ffb4ab",
+              "surface-container": "#201f1f",
+              "on-primary": "#690100",
+              "on-error-container": "#ffdad6",
+              "background": "#131313",
+              "secondary-container": "#970100",
+              "on-secondary-fixed-variant": "#930100",
+              "secondary-fixed": "#ffdad4",
+              "surface-tint": "#ffb4a8",
+              "surface-bright": "#3a3939",
+              "surface": "#131313",
+              "secondary": "#ffb4a8",
+              "on-primary-fixed": "#410000",
+              "surface-dim": "#131313",
+              "on-background": "#e5e2e1",
+              "on-surface": "#e5e2e1",
+              "primary": "#ffb4a8",
+              "primary-fixed-dim": "#ffb4a8",
+              "on-secondary-container": "#ff9f90",
+              "on-primary-container": "#5c0000",
+              "on-tertiary-container": "#580904",
+              "on-primary-fixed-variant": "#930100",
+              "on-error": "#690005",
+              "inverse-surface": "#e5e2e1",
+              "tertiary-container": "#e16f5e",
+              "tertiary-fixed": "#ffdad4",
+              "inverse-primary": "#c00100",
+              "on-secondary": "#690100",
+              "inverse-on-surface": "#313030",
+              "on-secondary-fixed": "#410000",
+              "surface-container-high": "#2a2a2a",
+              "primary-fixed": "#ffdad4",
+              "on-tertiary": "#621109",
+              "dimenziq-red": "#FF0000"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "mono": ["Space Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #0A0A0A;
+            color: #E5E2E1;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono { font-family: 'Space Mono', monospace; }
+        .glass-panel {
+            background: rgba(32, 31, 31, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(96, 62, 57, 0.15);
+        }
+        .tonal-shift { background-color: #0A0A0A; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0E0E0E; }
+        ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 10px; }
+        .glow-red { box-shadow: 0 0 15px rgba(255, 0, 0, 0.2); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .space-grotesk { font-family: 'Space Grotesk', sans-serif; }
+        .glow-sm:hover { text-shadow: 0 0 8px rgba(255, 0, 0, 0.4); }
+    </style>
+</head>
+<body class="dark bg-[#0A0A0A] flex overflow-hidden">
+<!-- SideNavBar (Fixed) -->
+<aside class="h-screen w-64 flex-shrink-0 border-r border-[#1C1B1B] tonal-shift bg-[#0A0A0A] flex flex-col py-6 px-4 z-50 overflow-hidden">
+<!-- Brand Header -->
+<div class="mb-6 px-2">
+<h1 class="text-xl font-black text-[#E5E2E1] tracking-tighter uppercase font-headline">MISSION CONTROL</h1>
+<p class="text-[0.6875rem] font-bold uppercase tracking-wider text-[#C0392B] font-headline text-[#FF0000]">DIMENZIQ TACTICAL</p>
+</div>
+<!-- Tactical Stats Sections - Compressed spacing to fit 100vh -->
+<nav class="flex-1 space-y-5 overflow-y-auto no-scrollbar pb-4">
+<!-- Final Verdict -->
+<div class="space-y-0.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">FINAL VERDICT</span>
+<div class="text-5xl font-black text-[#00FF41] font-headline tracking-tighter">GO</div>
+</div>
+<!-- Metrics Grid -->
+<div class="space-y-6">
+<!-- Confidence -->
+<div class="space-y-1.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">CONFIDENCE</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#00FF41] animate-pulse"></span>
+<span class="text-sm font-bold text-[#00FF41] tracking-widest uppercase">HIGH</span>
+</div>
+<p class="text-[0.6875rem] font-mono text-[#E5E2E1]/40 leading-tight uppercase">
+                        High historical alignment with this content archetype.
+                    </p>
+</div>
+<!-- Satisfaction Risk Gauge -->
+<div class="space-y-2">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SATISFACTION RISK</span>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1C1B1B]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-[#C0392B]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="49" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center font-headline font-bold text-lg text-[#C0392B] text-[#FF0000]">7.2</span>
+</div>
+</div>
+<!-- Creator Verdict -->
+<div class="space-y-1">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SMALL CREATOR VERDICT</span>
+<div>
+<span class="inline-block px-2 py-0.5 bg-[#00FF41]/10 border border-[#00FF41]/30 text-[#00FF41] text-[0.6875rem] font-black uppercase tracking-widest rounded-sm">CAN WIN</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Bottom Alert -->
+<div class="mt-auto pt-4 border-t border-[#1C1B1B]">
+<div class="bg-[#C0392B]/10 border border-[#C0392B]/20 p-3 rounded-sm flex items-start gap-3 bg-[#FF0000]/10 border-[#FF0000]/20">
+<span class="material-symbols-outlined text-[#C0392B] text-lg animate-pulse text-[#FF0000]" style="font-variation-settings: 'FILL' 1;">error</span>
+<div class="space-y-0.5 bg-[#FF0000]/10 border-[#FF0000]/20">
+<p class="text-[0.625rem] font-bold text-[#C0392B] uppercase tracking-wider text-[#FF0000]">TACTICAL ALERT</p>
+<p class="text-[0.75rem] font-medium leading-tight text-on-surface">Drop-off risk at 0:45</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto bg-[#0A0A0A] scroll-smooth">
+<!-- TopNavBar (Sticky) -->
+<header class="sticky top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl border-b border-[#1C1B1B] flex justify-between items-center px-8 h-16 flex-shrink-0">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black text-[#E5E2E1] font-headline tracking-tighter">DIMENZIQ</span>
+<nav class="flex gap-8 h-full items-center">
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] font-headline font-bold text-sm tracking-widest transition-all" href="#">VERDICT</a>
+<!-- Active Link: MARKET -->
+<a class="text-[#C0392B] border-b-2 border-[#C0392B] pb-2 font-headline font-bold text-sm tracking-widest h-full flex items-center translate-y-[8px]" href="#">MARKET</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] font-headline font-bold text-sm tracking-widest transition-all" href="#">CREATIVE</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] font-headline font-bold text-sm tracking-widest transition-all" href="#">EXECUTION</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] font-headline font-bold text-sm tracking-widest transition-all" href="#">GROWTH</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-[#C0392B] text-white px-6 py-2 rounded-sm font-headline font-bold text-xs tracking-widest hover:glow-sm transition-all uppercase bg-[#FF0000]">LAUNCH MISSION</button>
+<img alt="Commander Avatar" class="w-8 h-8 rounded-full border border-[#C0392B]/50 object-cover border-[#FF0000]/50" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqO240ldX39QP_R_0hXR20ke2jhaGm0Yix6q1SDP8UMs2692PGodfYIRl1e8yAIylpfiK4VWaD1jmnn5Zt00Bv6PVKQeYIWf-JpVYkRh_O14RP6tzyg5zfSZwR5bD92-i39Rkc0iJs_af-f89xoXDixC825XSAAbbA9IS49b7Pq5psZnOdkOofm8bZ7Hiz_YdZD-Im70NJUouEz9Uk8glzyG7qPCwmunQmrVzAwxwMoMLb02I7jcbrJUKqu52dvO-VFbYpDRQWE3g"/>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="pt-12 pb-16 px-10 max-w-7xl mx-auto flex gap-12">
+<!-- Tab Side Nav (Inner) - Matching layout of SCREEN_6 -->
+<div class="w-1 flex-shrink-0 border-r border-[#1C1B1B] relative">
+<div class="sticky top-24 rotate-90 origin-left translate-x-4 whitespace-nowrap">
+<span class="text-[0.625rem] font-bold tracking-[0.4em] text-[#C0392B] uppercase font-headline text-[#FF0000]">SECTION: MARKET</span>
+</div>
+</div>
+<!-- Main Content Body -->
+<div class="flex-1 space-y-12">
+<!-- Header Section -->
+<section class="">
+<span class="text-[#C0392B] font-headline font-bold tracking-[0.25em] text-[0.65rem] uppercase text-[#FF0000]">INTELLIGENCE FEED</span>
+<h2 class="text-4xl md:text-5xl font-black font-headline text-[#E5E2E1] mt-2 tracking-tighter uppercase">MARKET INTELLIGENCE</h2>
+</section>
+<!-- 2. MARKET TRUTH - Matching Glass Panel/Card Style -->
+<section class="p-10 rounded-sm relative overflow-hidden group bg-[#1C1B1B]">
+<div class="absolute top-0 right-0 w-64 h-64 bg-[#C0392B]/5 rounded-full -mr-20 -mt-20 blur-3xl transition-all group-hover:bg-[#C0392B]/10"></div>
+<div class="relative z-10">
+<div class="absolute top-0 right-0 p-4 opacity-5">
+<span class="material-symbols-outlined text-9xl" data-icon="radar">radar</span>
+</div>
+<p class="text-2xl md:text-4xl font-headline font-black text-[#E5E2E1] leading-tight max-w-4xl uppercase">
+                        "The niche is pivoting toward high-fidelity technical breakdowns over surface-level tutorials. Hyper-curated data visualization is the new baseline for authority."
+                    </p>
+<div class="mt-8 flex items-center gap-3">
+<span class="w-8 h-[1px] bg-[#C0392B] bg-[#FF0000]"></span>
+<span class="text-[0.6875rem] font-headline font-black text-[#C0392B] tracking-widest uppercase text-[#FF0000]">Verified Signal Alpha-1</span>
+</div>
+</div>
+</section>
+<!-- 3. Two Columns: Dominant Force & Competitor Weakness -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="bg-[#1C1B1B] p-8 rounded-sm border-l-2 flex flex-col justify-between min-h-[180px]">
+<div class="space-y-1 mb-4">
+<span class="text-[#C0392B] font-headline font-black text-[0.6875rem] tracking-widest uppercase text-[#FF0000]">DOMINANT FORCE</span>
+</div>
+<p class="text-xl font-bold text-[#E5E2E1] leading-tight font-headline">Incumbents rely on massive production budgets but lack technical granularity in their logic frameworks.</p>
+</div>
+<div class="bg-[#1C1B1B] p-8 rounded-sm border-l-2 flex flex-col justify-between min-h-[180px]">
+<div class="space-y-1 mb-4">
+<span class="text-[#C0392B] font-headline font-black text-[0.6875rem] tracking-widest uppercase text-[#FF0000]">COMPETITOR WEAKNESS</span>
+</div>
+<p class="text-xl font-bold text-[#E5E2E1] leading-tight font-headline">Structural failure in engagement retention due to repetitive intro hooks and generic B-roll sequences.</p>
+</div>
+</section>
+<!-- 4. AUDIENCE CRAVING -->
+<section class="bg-[#1C1B1B] p-10 rounded-sm">
+<span class="text-[#C0392B] font-headline font-black text-[0.6875rem] tracking-widest uppercase block mb-8">AUDIENCE CRAVING</span>
+<p class="text-3xl md:text-4xl font-headline font-medium italic text-[#E5E2E1] leading-tight uppercase tracking-tight">
+                    "Show me the architecture of the solution, not just the clicks. I want to see how the system thinks before I see how it's built."
+                </p>
+</section>
+<!-- 5. CONTENT GAPS -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="bg-[#1C1B1B] p-8 rounded-sm space-y-6">
+<span class="material-symbols-outlined text-[#C0392B] text-2xl" data-icon="gps_fixed">gps_fixed</span>
+<p class="text-[#E5E2E1] font-headline font-bold text-lg leading-tight">Lack of deep-dive architectural teardowns in mid-tier channels.</p>
+<p class="text-[#E5E2E1]/40 font-mono text-[0.625rem] uppercase tracking-wider">Source: Top Competitor Comments</p>
+</div>
+<div class="bg-[#1C1B1B] p-8 rounded-sm space-y-6">
+<span class="material-symbols-outlined text-[#C0392B] text-2xl" data-icon="gps_fixed">gps_fixed</span>
+<p class="text-[#E5E2E1] font-headline font-bold text-lg leading-tight">Missing connection between theory and actionable ROI metrics.</p>
+<p class="text-[#E5E2E1]/40 font-mono text-[0.625rem] uppercase tracking-wider">Source: Reddit Sentiment Analysis</p>
+</div>
+<div class="bg-[#1C1B1B] p-8 rounded-sm space-y-6">
+<span class="material-symbols-outlined text-[#C0392B] text-2xl" data-icon="gps_fixed">gps_fixed</span>
+<p class="text-[#E5E2E1] font-headline font-bold text-lg leading-tight">High demand for 'Anti-Hype' realistic case studies.</p>
+<p class="text-[#E5E2E1]/40 font-mono text-[0.625rem] uppercase tracking-wider">Source: Search Intent Overlap</p>
+</div>
+</section>
+<!-- 6. Two Columns: Small Creator Verdict & Algorithm Signal -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1C1B1B] rounded-sm overflow-hidden">
+<div class="bg-[#0A0A0A] p-10 space-y-6 border-l-4 border-[#00FF41]">
+<div class="flex items-center gap-2 text-[#00FF41]">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="text-[0.6875rem] font-black tracking-widest uppercase font-mono text-[#FF0000]">SMALL CREATOR VERDICT</span>
+</div>
+<div class="inline-block px-4 py-1 bg-[#00FF41]/10 border-[#00FF41]/30 text-[#00FF41] font-headline font-black text-2xl tracking-tighter uppercase">CAN WIN</div>
+<p class="text-sm text-[#E5E2E1]/60 leading-relaxed font-body">Specific technical niches are underserved. A small creator with high-domain expertise can bypass the algorithm's preference for broad appeal by targeting "Hard Logic" enthusiasts.</p>
+</div>
+<div class="bg-[#0A0A0A] p-10 space-y-6 border-l-4">
+<div class="flex items-center gap-2 text-[#C0392B]">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span class="text-[0.6875rem] font-black tracking-widest uppercase font-mono text-[#FF0000]">ALGORITHM SIGNAL</span>
+</div>
+<p class="text-[#E5E2E1] font-body text-sm leading-relaxed">Watch-time retention is currently favoring 12-15 minute durations with high-density visual changes. Static "talking head" sequences are being actively penalized in the current cycle.</p>
+</div>
+</section>
+<!-- 7. CONTENT ARCHETYPE -->
+<section class="bg-[#1C1B1B] p-10 rounded-sm">
+<div class="flex flex-wrap gap-4 mb-8">
+<div class="px-3 py-1 bg-blue-900/40 rounded-sm flex items-center gap-2 border-none">
+<div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+<span class="text-[0.65rem] font-headline font-bold text-blue-300 uppercase tracking-widest">CORE AUDIENCE</span>
+</div>
+<div class="px-3 py-1 bg-[#C0392B]/20 rounded-sm flex items-center gap-2">
+<div class="w-1.5 h-1.5 rounded-full bg-[#C0392B] animate-pulse"></div>
+<span class="text-[0.65rem] font-headline font-bold text-[#C0392B] uppercase tracking-widest">VIRAL REACH</span>
+</div>
+<div class="px-3 py-1 bg-green-900/20 rounded-sm flex items-center gap-2 opacity-50">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[0.65rem] font-headline font-bold text-green-300 uppercase tracking-widest">SEARCH EVERGREEN</span>
+</div>
+</div>
+<p class="text-2xl font-headline font-black text-[#E5E2E1] leading-tight mb-3 uppercase tracking-tight">The 'Teardown' Archetype is currently the highest-performing format.</p>
+<p class="text-[0.6875rem] font-mono text-[#E5E2E1]/40 uppercase tracking-[0.2em]">Recommended execution: High-speed montage transitions + Technical overlay graphics.</p>
+</section>
+<!-- 8. SATISFACTION RISK -->
+<section class="max-w-md">
+<div class="bg-[#1C1B1B] p-8 rounded-sm flex items-center gap-8 border-l-2">
+<div class="flex flex-col items-center">
+<span class="text-5xl font-black font-headline text-[#C0392B] tracking-tighter text-[#FF0000]">7.2</span>
+<span class="text-[0.5rem] font-headline font-black text-[#E5E2E1]/40 uppercase tracking-widest mt-1">SCORE</span>
+</div>
+<div class="h-16 w-px bg-[#2A2A2A]"></div>
+<div class="flex-1">
+<span class="text-[#C0392B] font-headline font-black text-[0.6875rem] tracking-widest uppercase block mb-2 text-[#FF0000]">SATISFACTION RISK</span>
+<p class="text-xs text-[#E5E2E1]/80 leading-snug font-body">High risk of audience fatigue if technical depth is not balanced with immediate utility.</p>
+</div>
+</div>
+</section>
+<!-- Spacer for bottom -->
+<div class="h-32"></div>
+</div>
+</div>
+</main>
+<!-- Floating Technical Indicator - Matching SCREEN_6 -->
+<div class="fixed bottom-8 right-8 flex flex-col items-end pointer-events-none z-50">
+<div class="flex items-center gap-4 bg-[#1C1B1B]/80 backdrop-blur-md px-4 py-2 rounded-sm border border-[#C0392B]/20 mb-2 border-[#FF0000]/20">
+<span class="text-[0.6rem] font-black text-[#C0392B] tracking-[0.3em] uppercase text-[#FF0000]">SYSTEM STATUS: OPTIMAL</span>
+<div class="flex gap-1">
+<div class="w-1 h-1 bg-[#00FF41] rounded-full"></div>
+<div class="w-1 h-1 bg-[#00FF41] rounded-full"></div>
+<div class="w-1 h-1 bg-[#00FF41] rounded-full animate-ping"></div>
+</div>
+</div>
+<div class="text-[0.6rem] font-mono text-[#E5E2E1]/20 tracking-tighter uppercase">
+                LATENCY: 12ms // BUFFER: 100% // SOURCE: D-INTELLIGENCE_CORE_V4
+            </div>
+</div>
+</body></html>

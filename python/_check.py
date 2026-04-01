@@ -1,5 +1,5 @@
 import py_compile, sys
-files = ["analyst_agent.py", "strategist_agent.py", "optimizer_agent.py", "llm_service.py", "youtube_service.py", "main.py"]
+files = ["api_models.py", "analyst_agent.py", "strategist_agent.py", "optimizer_agent.py", "llm_service.py", "main.py"]
 ok = True
 for f in files:
     try:

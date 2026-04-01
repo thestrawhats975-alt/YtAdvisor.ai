@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SPECTRE | Elite Intelligence Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#131313",
+                        "on-surface": "#e5e2e1",
+                        "primary": "#ffb4a8",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-lowest": "#0e0e0e",
+                        "surface-container": "#201f1f",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-highest": "#353534",
+                        "outline-variant": "#603e39",
+                        "secondary-container": "#970100",
+                        "on-secondary": "#690100",
+                        "surface-bright": "#3a3939",
+                        "spectre-red": "#FF0000"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0A0A0A;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-input-container {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+        .corner-accent::before, .corner-accent::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-color: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+        }
+        .corner-accent::before {
+            top: 0;
+            left: 0;
+            border-top: 1px solid;
+            border-left: 1px solid;
+        }
+        .corner-accent::after {
+            bottom: 0;
+            right: 0;
+            border-bottom: 1px solid;
+            border-right: 1px solid;
+        }
+        .scan-line {
+            background: linear-gradient(to bottom, transparent 50%, rgba(255, 0, 0, 0.02) 50%);
+            background-size: 100% 4px;
+        }
+        .glow-button-red:hover {
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            background-color: #FF0000;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen selection:bg-spectre-red/30 selection:text-on-primary">
+<!-- Top Navigation Shell -->
+<header class="flex justify-between items-center w-full px-6 py-4 sticky top-0 z-50 backdrop-blur-xl bg-[#131313] border-b border-[#603E39]/15 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black tracking-tighter text-[#E5E2E1] font-['Space_Grotesk'] uppercase">SPECTRE</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-['Space_Grotesk'] font-bold tracking-tight uppercase text-[#FFB4A8] border-b-2 border-[#FFB4A8] pb-1" href="#">Strategy</a>
+<a class="font-['Space_Grotesk'] font-bold tracking-tight uppercase text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" href="#">Intelligence</a>
+<a class="font-['Space_Grotesk'] font-bold tracking-tight uppercase text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" href="#">Archive</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 text-xs font-bold uppercase tracking-widest border border-white/5 transition-all">
+                New Analysis
+            </button>
+<div class="w-8 h-8 rounded-full border border-primary/20 bg-surface-container-highest overflow-hidden">
+<img alt="User Tactical Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVNGZmY3YZLmtfLi31EGN-gwp4TGhK16hNOtUdqqNFPqzEXsw-V4hYUmelmj2XEjy1Yd3iBj-mZQfpq6K4DEfyPG66p8DBv8XZDcETSoAUsyz5E23cIBTd6aBff-0ohr2mrpALMSKrnnG8cxLQ_sHRRo2D9_rLlZW7PZj5d9hotArPeA7Azmww6ogk0L5e3pnQAgoUYJC8NqFOajY4TBiEve8V4Hq0_dJzKbxbRjiiVtrmyrwCfPEqpEM9lOlatoMCac9_ld8vdec"/>
+</div>
+</div>
+</header>
+<main class="flex min-h-[calc(100vh-72px)]">
+<!-- Side Navigation Shell -->
+<aside class="hidden lg:flex flex-col fixed left-0 top-[72px] h-[calc(100vh-72px)] w-64 z-40 bg-[#0E0E0E] border-r border-[#603E39]/15 font-['Inter'] text-[0.6875rem] uppercase tracking-[0.05em]">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 bg-surface-container-high flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div>
+<div class="text-[#E5E2E1] font-bold">Spectre v1.0</div>
+<div class="text-[#E5E2E1]/40 text-[10px]">Elite Intelligence</div>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="bg-[#1C1B1B] text-[#FFB4A8] border-l-2 border-[#FFB4A8] flex items-center px-4 py-3 hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-sm">dashboard</span> Dashboard
+                    </a>
+<a class="text-[#E5E2E1]/50 hover:bg-[#1C1B1B]/50 flex items-center px-4 py-3 transition-all hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-sm">videocam</span> Video Intel
+                    </a>
+<a class="text-[#E5E2E1]/50 hover:bg-[#1C1B1B]/50 flex items-center px-4 py-3 transition-all hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-sm">analytics</span> Channel Ops
+                    </a>
+<a class="text-[#E5E2E1]/50 hover:bg-[#1C1B1B]/50 flex items-center px-4 py-3 transition-all hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-sm">monitoring</span> Market Pulse
+                    </a>
+<a class="text-[#E5E2E1]/50 hover:bg-[#1C1B1B]/50 flex items-center px-4 py-3 transition-all hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-sm">settings</span> Settings
+                    </a>
+</nav>
+</div>
+<div class="mt-auto p-6">
+<button class="w-full bg-secondary-container text-white py-4 font-bold tracking-[0.1em] hover:bg-[#B30000] transition-colors border border-white/10">
+                    Upgrade to Pro
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<section class="flex-1 lg:ml-64 flex flex-col items-center p-8 bg-[#0A0A0A] relative overflow-hidden">
+<!-- Background Decor -->
+<div class="absolute inset-0 scan-line pointer-events-none opacity-[0.3]"></div>
+<div class="w-full max-w-[768px] mx-auto space-y-12 py-12 relative z-10">
+<!-- Header -->
+<div class="text-center space-y-3">
+<h1 class="font-headline text-4xl md:text-5xl font-bold tracking-tighter uppercase text-on-surface">
+                        Analysis <span class="text-spectre-red">Input</span>
+</h1>
+<p class="font-body text-on-surface/40 text-[10px] tracking-[0.4em] uppercase">Initialize Market Penetration Scan</p>
+</div>
+<!-- Form Section -->
+<form class="space-y-10">
+<!-- Primary Input: Video Idea -->
+<div class="space-y-4">
+<label class="block font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-spectre-red/70 ml-1">Video Objective</label>
+<div class="glass-input-container corner-accent group transition-all duration-300 focus-within:border-spectre-red/30">
+<textarea class="w-full bg-transparent border-none text-on-surface p-6 text-xl font-light placeholder:text-on-surface/10 focus:ring-0 transition-all resize-none font-headline leading-relaxed" name="videoIdea" placeholder="Enter objective or title hypothesis..." rows="4"></textarea>
+<div class="absolute bottom-0 left-0 h-[1px] bg-spectre-red w-0 group-focus-within:w-full transition-all duration-500"></div>
+</div>
+</div>
+<!-- Contextual Section -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<label class="block font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface/40 ml-1">Channel DNA (Context)</label>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[10px] text-spectre-red animate-pulse">sensors</span>
+<p class="font-label text-[9px] text-on-surface/30 uppercase tracking-widest">Manual Injection</p>
+</div>
+</div>
+<div class="glass-input-container corner-accent group transition-all duration-300 focus-within:border-white/20">
+<textarea class="w-full bg-transparent border-none text-on-surface/70 p-4 text-xs placeholder:text-on-surface/10 focus:ring-0 transition-all resize-none font-body tracking-wide" name="creatorDna" placeholder="Injection point for channel metadata..." rows="3"></textarea>
+</div>
+</div>
+<!-- TESTING_DATA (MVP_ONLY) Section -->
+<div class="pt-8 space-y-6 border-t border-white/5">
+<div class="flex items-center gap-4">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-spectre-red">Testing_Data (MVP_ONLY)</label>
+<div class="flex-1 h-[1px] bg-spectre-red/10"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Search Volume -->
+<div class="space-y-2">
+<label class="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Search Volume</label>
+<div class="glass-input-container corner-accent">
+<input class="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0" name="searchVolume" placeholder="e.g. 100000" type="number"/>
+</div>
+</div>
+<!-- Keyword Saturation -->
+<div class="space-y-2">
+<label class="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Keyword Saturation</label>
+<div class="glass-input-container corner-accent">
+<select class="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0 appearance-none" name="keywordSaturation">
+<option class="bg-surface-container" value="High">High</option>
+<option class="bg-surface-container" value="Medium">Medium</option>
+<option class="bg-surface-container" value="Low">Low</option>
+</select>
+</div>
+</div>
+<!-- Top Video Velocity -->
+<div class="space-y-2">
+<label class="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Top Video Velocity</label>
+<div class="glass-input-container corner-accent">
+<input class="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0" name="topVideoVelocity" placeholder="vph" type="number"/>
+</div>
+</div>
+<!-- Competitor Thumbnails -->
+<div class="space-y-2">
+<label class="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Competitor Thumbnails</label>
+<div class="glass-input-container corner-accent">
+<input class="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0" name="competitorThumbnails" placeholder="https://..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Competitor Comments -->
+<div class="space-y-2">
+<label class="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Competitor Comments</label>
+<div class="glass-input-container corner-accent">
+<textarea class="w-full bg-transparent border-none text-on-surface p-4 text-xs placeholder:text-on-surface/10 focus:ring-0 transition-all resize-none font-body tracking-wide" name="competitorComments" placeholder="Paste top comment insights..." rows="3"></textarea>
+</div>
+</div>
+</div>
+<!-- Submit Action -->
+<div class="flex flex-col items-center pt-8 border-t border-white/5">
+<div class="mb-4 text-center">
+<p class="font-mono text-[8px] text-on-surface/30 uppercase tracking-[0.2em] mb-2">Request Payload Preparation</p>
+<div class="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+<span class="text-[9px] font-mono text-spectre-red">{</span>
+<span class="text-[9px] font-mono text-on-surface/60">request, signals, competitors</span>
+<span class="text-[9px] font-mono text-spectre-red">}</span>
+</div>
+</div>
+<button class="glow-button-red group relative w-full md:w-auto md:min-w-[280px] bg-spectre-red text-white py-4 px-8 font-headline font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-3" type="submit">
+                            Analyze Market
+                            <span class="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">bolt</span>
+</button>
+<div class="mt-6 flex flex-col items-center gap-2">
+<p class="font-label text-[9px] text-on-surface/20 uppercase tracking-[0.4em]">Neural Compute Requirement: 4-8s</p>
+<div class="flex gap-1">
+<div class="w-1 h-1 bg-spectre-red/40 rounded-full animate-pulse-slow"></div>
+<div class="w-1 h-1 bg-spectre-red/40 rounded-full animate-pulse-slow" style="animation-delay: 1s"></div>
+<div class="w-1 h-1 bg-spectre-red/40 rounded-full animate-pulse-slow" style="animation-delay: 2s"></div>
+</div>
+</div>
+</div>
+</form>
+<!-- Creative Signal Integrity Visual -->
+<div class="pt-8 space-y-6">
+<div class="flex items-center gap-4">
+<div class="flex-1 h-[1px] bg-white/5"></div>
+<span class="text-[9px] font-bold uppercase tracking-[0.5em] text-on-surface/20">System Diagnostics</span>
+<div class="flex-1 h-[1px] bg-white/5"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Integrity -->
+<div class="bg-white/[0.02] border border-white/5 p-4 relative overflow-hidden">
+<div class="flex justify-between items-end mb-2">
+<span class="text-[8px] text-on-surface/40 uppercase tracking-widest font-bold">Signal Integrity</span>
+<span class="text-[8px] text-spectre-red font-mono">92.4%</span>
+</div>
+<div class="h-[2px] bg-white/5 w-full">
+<div class="h-full bg-spectre-red/40 w-[92%] relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-3 bg-spectre-red shadow-[0_0_8px_#FF0000]"></div>
+</div>
+</div>
+</div>
+<!-- Latency -->
+<div class="bg-white/[0.02] border border-white/5 p-4 relative overflow-hidden">
+<div class="flex justify-between items-end mb-2">
+<span class="text-[8px] text-on-surface/40 uppercase tracking-widest font-bold">Market Latency</span>
+<span class="text-[8px] text-primary/60 font-mono">14ms</span>
+</div>
+<div class="h-[2px] bg-white/5 w-full">
+<div class="h-full bg-primary/40 w-[14%]"></div>
+</div>
+</div>
+<!-- Node Load -->
+<div class="bg-white/[0.02] border border-white/5 p-4 relative overflow-hidden">
+<div class="flex justify-between items-end mb-2">
+<span class="text-[8px] text-on-surface/40 uppercase tracking-widest font-bold">Compute Load</span>
+<span class="text-[8px] text-primary/60 font-mono">0.38 t/FLOP</span>
+</div>
+<div class="h-[2px] bg-white/5 w-full">
+<div class="h-full bg-primary/40 w-[38%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Visual Background Elements -->
+<div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+<div class="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-spectre-red/5 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] left-[-5%] w-[30%] h-[30%] bg-secondary-container/5 blur-[100px] rounded-full"></div>
+<div class="absolute inset-0 opacity-[0.02]" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCLHJtvBiY-acMNMuqq7zWi-P8OKKX7hXM5u4L3GKkpivQoTJHx0UZ3U-5FOG91n4yKzrBsDcNFFB6bi8aQ78wuqpbWBdur2M9Dk73CEMJBwcVJ_2DU7kfl-mnHWSQiOgraxyhJsW5KOkDy23v9BAKjjUIPAk1Ebu7iKQInMHyyn9oxOSFEXg7c1SoUhFpwJBlTgtRnMl9-eqFccp4mZP-05ghKDbAbs5ABM2HZ_AQ_C97gG7p6Y1tfsrJ3RR4qdM2QfnYwjUbQlUY');"></div>
+</div>
+</body></html>

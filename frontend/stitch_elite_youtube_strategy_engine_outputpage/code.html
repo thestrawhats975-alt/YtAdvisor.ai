@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DimenzIq | Intelligence Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "background": "#0A0A0A",
+                        "surface": "#131313",
+                        "primary": "#FF0000", // YouTube Red accent
+                        "surface-container": "#151515",
+                        "outline-variant": "rgba(255, 255, 255, 0.05)",
+                        "on-surface": "#e5e2e1",
+                        "on-surface-variant": "#a5a2a1",
+                        "tertiary": "#ffb4a8",
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0A0A0A; }
+        ::-webkit-scrollbar-thumb { background: #353534; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30">
+<!-- Top Navigation Bar -->
+<nav class="sticky top-0 z-50 bg-[#0A0A0A] border-b border-white/5 flex justify-between items-center w-full px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold tracking-tighter text-[#E5E2E1] font-headline uppercase">DimenzIq</span>
+<div class="hidden md:flex gap-6 ml-8">
+<a class="text-primary font-bold text-[0.6875rem] uppercase tracking-wider font-label transition-colors" href="#">Verdict</a>
+<a class="text-[#A5A2A1] hover:bg-white/5 text-[0.6875rem] uppercase tracking-wider font-label transition-colors px-2 py-1" href="#">Tactical</a>
+<a class="text-[#A5A2A1] hover:bg-white/5 text-[0.6875rem] uppercase tracking-wider font-label transition-colors px-2 py-1" href="#">Market</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#A5A2A1] hover:text-primary transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-[#A5A2A1] hover:text-primary transition-colors" data-icon="settings">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-white/5">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsd3TGImHKL7XsQsYsVMcMoXvd0vd-a44wpmaKFHd5wshKDkQU1Jth6RYKR8f9OdRVHnLrIuFsMCzyskkaNFDyvNMskwfR8U0BEZgGZRWJjLRxhMyBracGHWuhnEGy238g825V34biQgeWFsWay9XkdCA-d8nQAUZ6SRbg1LH80McYfRZhs5gmdxCP8ijGMOPrC3-f6mdWIPhPSWESGe32mcLaNrIZR-NzJjIHzHvGzEInYWk80uIXi9KittKoQ5D3M0hce4f_jJQ"/>
+</div>
+</div>
+</nav>
+<main class="max-w-6xl mx-auto px-6 py-12 space-y-24">
+<!-- 1. THE EXECUTIVE VERDICT -->
+<section id="verdict">
+<div class="flex flex-col md:flex-row md:items-baseline gap-6 mb-8">
+<h1 class="text-8xl md:text-[12rem] font-headline font-bold tracking-tighter text-on-surface text-glow leading-none uppercase">
+                    GO
+                </h1>
+<span class="inline-flex items-center px-4 py-2 bg-primary text-white text-xs font-bold uppercase tracking-[0.25em] rounded-sm transform -translate-y-4 md:-translate-y-12">
+                    Educational Storytelling
+                </span>
+</div>
+<div class="max-w-4xl">
+<p class="text-2xl md:text-4xl text-on-surface leading-tight font-light font-headline">
+                    The algorithm is currently starving for high-retention technical breakdowns in your niche. Current competition relies on generic templates, creating a massive opening for <span class="text-primary italic">"The Kinetic Instrument"</span> visual style.
+                </p>
+</div>
+</section>
+<!-- 2. THE ATTACK PLAN -->
+<section class="space-y-8" id="attack-plan">
+<div class="flex items-center gap-4">
+<h2 class="text-sm font-headline font-bold uppercase tracking-[0.4em] text-primary">The Attack Plan</h2>
+<div class="flex-grow h-[1px] bg-white/5"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 border border-white/5">
+<!-- Hook Script -->
+<div class="bg-background p-10 space-y-6">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant block">Exact Hook Script</label>
+<div class="bg-white/5 p-8 font-mono text-xl leading-relaxed border border-white/5 text-on-surface select-all">
+                        "Most creators think [Market Myth] is the secret to growth. They're wrong. After analyzing 1,000 data points, the reality is far more kinetic. Here is exactly how we exploited the [Target Variable] to break the algorithm."
+                    </div>
+</div>
+<!-- Thumbnail Strategy -->
+<div class="bg-background p-10 flex flex-col justify-between">
+<div class="space-y-6">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant block">Thumbnail Strategy</label>
+<div class="bg-white/5 p-8 border border-white/5">
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                                Use <span class="text-on-surface font-medium">Matte Charcoal (#0E0E0E)</span> background with a single high-intensity focus point in <span class="text-primary font-medium">Laser Red</span>. Avoid faces; use technical blueprints to imply authority.
+                            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Title Psychology (Below row) -->
+<div class="glass-panel p-10 border border-white/5">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-primary mb-4 block">Title Psychology</label>
+<div class="flex flex-col md:flex-row gap-8 items-start">
+<h3 class="text-3xl font-headline font-bold text-on-surface uppercase tracking-tight">The "False Mastery" Trap</h3>
+<p class="text-base text-on-surface-variant leading-relaxed max-w-2xl">
+                        Triggering the viewer's insecurity about their current process. By framing their current success as "lucky" or "accidental," we force a high-intent click to regain control.
+                    </p>
+</div>
+</div>
+</section>
+<!-- 3. THE EXECUTION RULES -->
+<section class="space-y-8" id="execution-rules">
+<div class="flex items-center gap-4">
+<h2 class="text-sm font-headline font-bold uppercase tracking-[0.4em] text-primary">Execution Rules</h2>
+<div class="flex-grow h-[1px] bg-white/5"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Pacing Guide -->
+<div class="glass-panel p-8 space-y-6">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant block">Pacing Guide</label>
+<div class="bg-white/5 p-4 border border-white/5">
+<p class="text-xs text-on-surface leading-relaxed uppercase tracking-wide">Cut every 1.8 seconds. Utilize "ghost-frame" overlays for technical data.</p>
+</div>
+</div>
+<!-- Quality Upgrades -->
+<div class="glass-panel p-8 space-y-6">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant block">Quality Upgrades</label>
+<ul class="space-y-4">
+<li class="flex items-start gap-3 text-xs uppercase tracking-wide text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg leading-none" data-icon="bolt">bolt</span>
+                            60fps Motion Graphics
+                        </li>
+<li class="flex items-start gap-3 text-xs uppercase tracking-wide text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg leading-none" data-icon="bolt">bolt</span>
+                            Sub-bass hook layering
+                        </li>
+<li class="flex items-start gap-3 text-xs uppercase tracking-wide text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg leading-none" data-icon="bolt">bolt</span>
+                            Bespoke screen recordings
+                        </li>
+</ul>
+</div>
+<!-- Post-Publish Strategy -->
+<div class="glass-panel p-8 space-y-6">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant block">Post-Publish</label>
+<ul class="space-y-4">
+<li class="flex items-start gap-3 text-xs uppercase tracking-wide text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg leading-none" data-icon="share">share</span>
+                            Pinned Controversy
+                        </li>
+<li class="flex items-start gap-3 text-xs uppercase tracking-wide text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg leading-none" data-icon="share">share</span>
+                            T3-Hour CTR Update
+                        </li>
+<li class="flex items-start gap-3 text-xs uppercase tracking-wide text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg leading-none" data-icon="share">share</span>
+                            Technical Engagement
+                        </li>
+</ul>
+</div>
+</div>
+</section>
+<!-- 4. THE MARKET MATH -->
+<section class="space-y-12" id="market-math">
+<div class="flex items-center gap-4">
+<h2 class="text-sm font-headline font-bold uppercase tracking-[0.4em] text-primary">Market Math</h2>
+<div class="flex-grow h-[1px] bg-white/5"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Left Column: Risk and Analysis -->
+<div class="md:col-span-4 space-y-8">
+<!-- Satisfaction Risk -->
+<div class="glass-panel p-8 flex flex-col items-center">
+<label class="text-[10px] font-label font-bold uppercase tracking-[0.3em] text-on-surface-variant mb-8">Satisfaction Risk</label>
+<div class="relative w-40 h-40 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-white/5" cx="80" cy="80" fill="transparent" r="75" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="80" cy="80" fill="transparent" r="75" stroke="currentColor" stroke-dasharray="471" stroke-dashoffset="94.2" stroke-width="6"></circle>
+</svg>
+<div class="absolute flex items-baseline gap-1">
+<span class="text-5xl font-headline font-bold">8</span>
+<span class="text-xl font-headline text-on-surface-variant">/ 10</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Content Gaps & Intelligence -->
+<div class="md:col-span-8 space-y-8">
+<!-- Targeted Content Gaps -->
+<div class="bg-white/5 p-10 border border-white/5">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant mb-6 block">Targeted Content Gaps</label>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex items-center gap-4 group">
+<span class="material-symbols-outlined text-primary" data-icon="target">target</span>
+<span class="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Zero-cost efficiency benchmarks</span>
+</div>
+<div class="flex items-center gap-4 group">
+<span class="material-symbols-outlined text-primary" data-icon="warning">warning</span>
+<span class="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Failure-state analysis</span>
+</div>
+<div class="flex items-center gap-4 group">
+<span class="material-symbols-outlined text-primary" data-icon="target">target</span>
+<span class="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Advanced API walkthroughs</span>
+</div>
+<div class="flex items-center gap-4 group">
+<span class="material-symbols-outlined text-primary" data-icon="warning">warning</span>
+<span class="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Data-driven verification</span>
+</div>
+</div>
+</div>
+<!-- Market Insights -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="glass-panel p-6 space-y-4">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-primary block">Dominant Force</label>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                                Current market dominance is held by high-production generalists who favor visual spectacle over raw data accuracy. They win on initial click but lose on long-term authority.
+                            </p>
+</div>
+<div class="glass-panel p-6 space-y-4">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-primary block">Channel Leverage</label>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                                Your advantage lies in proprietary data sets and zero-cost efficiency benchmarks that established players cannot replicate without compromising their sponsorship deals.
+                            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Shorts Warning (Conditional) -->
+<div class="p-8 bg-primary/10 border border-primary/30 flex flex-col md:flex-row items-center gap-8">
+<span class="material-symbols-outlined text-primary text-5xl" data-icon="crisis_alert" data-weight="fill">crisis_alert</span>
+<div class="space-y-1 text-center md:text-left">
+<h4 class="font-headline font-bold text-primary uppercase tracking-tighter text-xl">Tactical Alert: Shorts Test Recommended</h4>
+<p class="text-sm text-on-surface/80">Historical data indicates high drop-off at 0:45. Run a 15-second "Hook Variant" on Shorts before the main upload to validate retention logic.</p>
+</div>
+</div>
+<!-- Performance Outlook (Capstone) -->
+<div class="pt-12 border-t border-white/5 flex flex-col items-center">
+<label class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant mb-4">Final Capstone</label>
+<div class="text-center">
+<h5 class="text-4xl md:text-6xl font-headline font-bold uppercase tracking-tighter text-primary">Performance Outlook</h5>
+<p class="text-xl text-on-surface mt-2 font-light">50k Baseline | 250k Ceiling | Focus on depth</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="border-t border-white/5 py-12 bg-[#0A0A0A]">
+<div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex flex-col gap-1">
+<span class="text-primary font-black tracking-tighter text-lg font-headline">STRAT-INTEL</span>
+<span class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest">Version Alpha-01.82 | Deployment Unit 402</span>
+</div>
+<div class="flex gap-8">
+<a class="text-[10px] font-label text-on-surface-variant uppercase tracking-[0.2em] hover:text-primary transition-colors" href="#">Archive</a>
+<a class="text-[10px] font-label text-on-surface-variant uppercase tracking-[0.2em] hover:text-primary transition-colors" href="#">Terminal</a>
+<a class="text-[10px] font-label text-on-surface-variant uppercase tracking-[0.2em] hover:text-primary transition-colors" href="#">Logout</a>
+</div>
+</div>
+</footer>
+</body></html>

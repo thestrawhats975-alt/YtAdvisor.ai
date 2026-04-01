@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DimenzIq Execution Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-container": "#970100",
+                        "secondary": "#E5E2E1",
+                        "surface-container-low": "#1c1b1b",
+                        "primary-fixed-dim": "#E5E2E1",
+                        "primary": "#E5E2E1",
+                        "surface-bright": "#3a3939",
+                        "on-primary": "#690100",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-fixed": "#410000",
+                        "on-error": "#690005",
+                        "inverse-primary": "#c00100",
+                        "outline-variant": "#603e39",
+                        "inverse-on-surface": "#313030",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-dim": "#131313",
+                        "on-secondary-fixed-variant": "#930100",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container": "#201f1f",
+                        "tertiary-fixed-dim": "#E5E2E1",
+                        "secondary-fixed": "#FFFFFF",
+                        "surface-tint": "#E5E2E1",
+                        "tertiary-fixed": "#FFFFFF",
+                        "on-tertiary-container": "#580904",
+                        "on-secondary-container": "#FFFFFF",
+                        "tertiary": "#E5E2E1",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary-fixed": "#410000",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#e16f5e",
+                        "primary-container": "#ff5540",
+                        "outline": "#E5E2E1",
+                        "background": "#0a0a0a",
+                        "on-primary-fixed-variant": "#930100",
+                        "error-container": "#93000a",
+                        "surface": "#131313",
+                        "secondary-fixed-dim": "#E5E2E1",
+                        "on-tertiary-fixed-variant": "#81281d",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#e5e2e1",
+                        "on-secondary": "#690100",
+                        "on-surface": "#e5e2e1",
+                        "on-tertiary": "#621109",
+                        "on-primary-fixed": "#410000",
+                        "primary-fixed": "#FFFFFF",
+                        "surface-variant": "#353534",
+                        "on-surface-variant": "#E5E2E1",
+                        "on-primary-container": "#5c0000",
+                        "dimenziq-red": "#c0392b"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["Space Mono", "JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-mesh {
+            background-color: #0a0a0a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(151, 1, 0, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(20, 20, 20, 1) 0px, transparent 50%);
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tonal-shift { background-color: #0A0A0A; }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-on-surface font-body selection:bg-secondary-container selection:text-white antialiased flex overflow-hidden">
+<!-- Sidebar Wrapper -->
+<aside class="h-screen w-64 flex-shrink-0 border-r border-[#1C1B1B] tonal-shift bg-[#0A0A0A] flex flex-col py-6 px-4 z-50 overflow-hidden">
+<!-- Brand Header -->
+<div class="mb-6 px-2">
+<h1 class="text-xl font-black text-[#E5E2E1] tracking-tighter uppercase font-headline">MISSION CONTROL</h1>
+<p class="text-[0.6875rem] font-bold uppercase tracking-wider text-[#FF0000] font-headline">DIMENZIQ TACTICAL</p>
+</div>
+<!-- Tactical Stats Sections -->
+<nav class="flex-1 space-y-5 overflow-y-auto no-scrollbar pb-4">
+<!-- Final Verdict -->
+<div class="space-y-0.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">FINAL VERDICT</span>
+<div class="text-5xl font-black text-[#00FF41] font-headline tracking-tighter">GO</div>
+</div>
+<!-- Metrics Grid -->
+<div class="space-y-6">
+<!-- Confidence -->
+<div class="space-y-1.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">CONFIDENCE</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#00FF41] animate-pulse"></span>
+<span class="text-sm font-bold text-[#00FF41] tracking-widest uppercase">HIGH</span>
+</div>
+<p class="text-[0.6875rem] font-mono text-[#E5E2E1]/40 leading-tight uppercase">
+                        High historical alignment with this content archetype.
+                    </p>
+</div>
+<!-- Satisfaction Risk Gauge -->
+<div class="space-y-2">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SATISFACTION RISK</span>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1C1B1B]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-[#FF0000]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="49" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center font-headline font-bold text-lg text-[#FF0000]">7.2</span>
+</div>
+</div>
+<!-- Creator Verdict -->
+<div class="space-y-1">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SMALL CREATOR VERDICT</span>
+<div>
+<span class="inline-block px-2 py-0.5 bg-[#00FF41]/10 border border-[#00FF41]/30 text-[#00FF41] text-[0.6875rem] font-black uppercase tracking-widest rounded-sm">CAN WIN</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Bottom Alert -->
+<div class="mt-auto pt-4 border-t border-[#1C1B1B]">
+<div class="bg-[#FF0000]/10 border border-[#FF0000]/20 p-3 rounded-sm flex items-start gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-lg animate-pulse" style="font-variation-settings: 'FILL' 1;">error</span>
+<div class="space-y-0.5">
+<p class="text-[0.625rem] font-bold text-[#FF0000] uppercase tracking-wider">TACTICAL ALERT</p>
+<p class="text-[0.75rem] font-medium leading-tight text-[#E5E2E1]">Drop-off risk at 0:45</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Wrapper -->
+<div class="flex-1 flex flex-col min-w-0 relative h-screen">
+<!-- Top Navigation -->
+<header class="h-16 flex-shrink-0 bg-[#131313]/80 backdrop-blur-xl border-b border-[#1C1B1B] flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#E5E2E1] font-headline tracking-tighter">DIMENZIQ</span>
+<div class="h-4 w-px bg-[#1C1B1B]"></div>
+<div class="flex gap-6">
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">VERDICT</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">MARKET</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">CREATIVE</a>
+<a class="text-[#FF0000] border-b-2 border-[#FF0000] pb-2 font-headline font-bold text-sm tracking-widest" href="#">EXECUTION</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">GROWTH</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-[#970100] text-[#E5E2E1] px-5 py-2 text-xs font-black uppercase tracking-widest rounded-sm hover:shadow-[0_0_15px_rgba(151,1,0,0.5)] transition-all active:scale-95">LAUNCH MISSION</button>
+<img alt="Commander Avatar" class="w-8 h-8 rounded-full border border-[#FF0000]/50 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqO240ldX39QP_R_0hXR20ke2jhaGm0Yix6q1SDP8UMs2692PGodfYIRl1e8yAIylpfiK4VWaD1jmnn5Zt00Bv6PVKQeYIWf-JpVYkRh_O14RP6tzyg5zfSZwR5bD92-i39Rkc0iJs_af-f89xoXDixC825XSAAbbA9IS49b7Pq5psZnOdkOofm8bZ7Hiz_YdZD-Im70NJUouEz9Uk8glzyG7qPCwmunQmrVzAwxwMoMLb02I7jcbrJUKqu52dvO-VFbYpDRQWE3g"/>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto bg-mesh pb-20 scroll-smooth">
+<!-- Content Container -->
+<div class="max-w-6xl mx-auto px-12 py-12 space-y-12">
+<!-- Section Header -->
+<header class="flex items-end justify-between border-b border-outline-variant/20 pb-4">
+<div class="space-y-1">
+<span class="text-secondary-container font-headline font-black text-xs uppercase tracking-[.3em]">Module 04</span>
+<h1 class="text-5xl font-headline font-extrabold tracking-tighter text-[#FFFFFF]">EXECUTION BLUEPRINT</h1>
+</div>
+<div class="bg-secondary-container/10 px-4 py-1 border-l-4 border-secondary-container">
+<span class="text-secondary-container font-headline font-black text-[10px] uppercase tracking-widest">Tactical Protocol Active</span>
+</div>
+</header>
+<!-- Sub-section A: THE HOOK -->
+<section class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#E5E2E1]">anchor</span>
+<h2 class="text-lg font-headline font-bold text-[#FFFFFF] tracking-tight uppercase">The Hook</h2>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/10 p-10 relative group overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary-container"></div>
+<div class="flex justify-between items-start mb-8">
+<span class="text-[10px] font-black text-secondary-container uppercase tracking-widest">EXACT HOOK SCRIPT</span>
+<span class="text-[10px] text-[#E5E2E1]/30 font-mono">ID: HK-092-ALPHA</span>
+</div>
+<div class="space-y-6">
+<p class="text-3xl md:text-4xl font-mono font-medium leading-[1.4] text-[#E5E2E1]/90 text-center tracking-tight">
+                            "Stop designing interfaces that look like <span class="text-[#FFFFFF] font-bold">templates</span>. In 2024, the only way to escape the <span class="underline decoration-secondary-container/40">noise</span> is to treat your UI like a high-performance kinetic instrument."
+                        </p>
+<div class="flex justify-center pt-8 border-t border-outline-variant/10">
+<span class="text-sm font-body italic text-[#E5E2E1]/40 text-center max-w-2xl px-8">
+                                psychology: The 'disruptive negative' intro creates immediate cognitive dissonance, forcing the user to re-evaluate their current workflow while establishing authority through a strong technical metaphor.
+                            </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sub-section B: PACING TIMELINE -->
+<section class="space-y-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#E5E2E1]">hourglass_top</span>
+<h2 class="text-lg font-headline font-bold text-[#FFFFFF] tracking-tight uppercase">Pacing Timeline</h2>
+</div>
+<div class="relative pl-8 space-y-0">
+<!-- Vertical Line -->
+<div class="absolute left-[3.75rem] top-0 bottom-0 w-[1px] bg-secondary-container/30"></div>
+<!-- Timeline Item 1 -->
+<div class="relative flex items-center py-6 group">
+<div class="w-24 text-right pr-12 font-mono text-[#FFFFFF] font-bold text-sm">00:00</div>
+<div class="absolute left-[3.5rem] w-2 h-2 rounded-full bg-secondary-container border-4 border-[#0a0a0a] z-10"></div>
+<div class="flex-1 pl-12 flex justify-between items-center bg-surface-container-low/50 hover:bg-surface-container-low p-4 transition-colors">
+<span class="text-[#E5E2E1] font-headline font-bold text-base tracking-tight">Visual Explosion Intro</span>
+<span class="text-[#E5E2E1]/40 text-[10px] font-mono uppercase tracking-widest">Rapid 3-Frame Cut</span>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="relative flex items-center py-6 group">
+<div class="w-24 text-right pr-12 font-mono text-[#FFFFFF] font-bold text-sm">00:08</div>
+<div class="absolute left-[3.5rem] w-2 h-2 rounded-full bg-secondary-container border-4 border-[#0a0a0a] z-10"></div>
+<div class="flex-1 pl-12 flex justify-between items-center bg-surface-container-low/50 hover:bg-surface-container-low p-4 transition-colors">
+<span class="text-[#E5E2E1] font-headline font-bold text-base tracking-tight">Problem Architecture</span>
+<span class="text-[#E5E2E1]/40 text-[10px] font-mono uppercase tracking-widest">Slow Kinetic Typography</span>
+</div>
+</div>
+<!-- Timeline Item 3 -->
+<div class="relative flex items-center py-6 group">
+<div class="w-24 text-right pr-12 font-mono text-[#FFFFFF] font-bold text-sm">00:25</div>
+<div class="absolute left-[3.5rem] w-2 h-2 rounded-full bg-secondary-container border-4 border-[#0a0a0a] z-10"></div>
+<div class="flex-1 pl-12 flex justify-between items-center bg-surface-container-low/50 hover:bg-surface-container-low p-4 transition-colors">
+<span class="text-[#E5E2E1] font-headline font-bold text-base tracking-tight">Technical Deep-Dive</span>
+<span class="text-[#E5E2E1]/40 text-[10px] font-mono uppercase tracking-widest">Screen-Record Macro Zoom</span>
+</div>
+</div>
+<!-- Timeline Item 4 -->
+<div class="relative flex items-center py-6 group">
+<div class="w-24 text-right pr-12 font-mono text-[#FFFFFF] font-bold text-sm">01:15</div>
+<div class="absolute left-[3.5rem] w-2 h-2 rounded-full bg-secondary-container border-4 border-[#0a0a0a] z-10"></div>
+<div class="flex-1 pl-12 flex justify-between items-center bg-surface-container-low/50 hover:bg-surface-container-low p-4 transition-colors">
+<span class="text-[#E5E2E1] font-headline font-bold text-base tracking-tight">The "Aha" Realization</span>
+<span class="text-[#E5E2E1]/40 text-[10px] font-mono uppercase tracking-widest">Audio Low-Pass Filter</span>
+</div>
+</div>
+<!-- Timeline Item 5 -->
+<div class="relative flex items-center py-6 group">
+<div class="w-24 text-right pr-12 font-mono text-[#FFFFFF] font-bold text-sm">02:40</div>
+<div class="absolute left-[3.5rem] w-2 h-2 rounded-full bg-secondary-container border-4 border-[#0a0a0a] z-10"></div>
+<div class="flex-1 pl-12 flex justify-between items-center bg-surface-container-low/50 hover:bg-surface-container-low p-4 transition-colors">
+<span class="text-[#E5E2E1] font-headline font-bold text-base tracking-tight">Strategic Call to Action</span>
+<span class="text-[#E5E2E1]/40 text-[10px] font-mono uppercase tracking-widest">Direct Look to Lens</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sub-section C: RETENTION TRAPS -->
+<section class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#E5E2E1]">error</span>
+<h2 class="text-lg font-headline font-bold text-[#FFFFFF] tracking-tight uppercase">Retention Traps</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Trap 1 -->
+<div class="bg-surface-container-low p-6 border border-outline-variant/10 space-y-4">
+<div class="flex items-center gap-2 text-[#FFA000]">
+<span class="material-symbols-outlined text-xl">warning</span>
+<span class="text-[10px] font-black uppercase tracking-widest">Low Heat Moment</span>
+</div>
+<h3 class="text-[#E5E2E1] font-headline font-bold text-lg leading-tight">00:45 Technical Slump</h3>
+<p class="text-[#E5E2E1]/40 text-xs">Users tend to bounce when technical specs exceed visual stimulation.</p>
+<div class="pt-4 flex items-center gap-2 text-[#4CAF50]">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Inject pattern interrupt B-Roll</span>
+</div>
+</div>
+<!-- Trap 2 -->
+<div class="bg-surface-container-low p-6 border border-outline-variant/10 space-y-4">
+<div class="flex items-center gap-2 text-[#FFA000]">
+<span class="material-symbols-outlined text-xl">warning</span>
+<span class="text-[10px] font-black uppercase tracking-widest">Dead Air Trap</span>
+</div>
+<h3 class="text-[#E5E2E1] font-headline font-bold text-lg leading-tight">01:20 Tool Explanation</h3>
+<p class="text-[#E5E2E1]/40 text-xs">Lengthy UI navigations without narrative commentary.</p>
+<div class="pt-4 flex items-center gap-2 text-[#4CAF50]">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Use 2x Speed + VO overlay</span>
+</div>
+</div>
+<!-- Trap 3 -->
+<div class="bg-surface-container-low p-6 border border-outline-variant/10 space-y-4">
+<div class="flex items-center gap-2 text-[#FFA000]">
+<span class="material-symbols-outlined text-xl">warning</span>
+<span class="text-[10px] font-black uppercase tracking-widest">The "Wait" Period</span>
+</div>
+<h3 class="text-[#E5E2E1] font-headline font-bold text-lg leading-tight">Closing Transition</h3>
+<p class="text-[#E5E2E1]/40 text-xs">Standard wrap-ups signal the viewer to leave immediately.</p>
+<div class="pt-4 flex items-center gap-2 text-[#4CAF50]">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Loop conclusion into loop-start</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sub-section D: THE RULES -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Win Conditions -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-[#4CAF50]">
+<span class="material-symbols-outlined">verified</span>
+<h2 class="text-[11px] font-black uppercase tracking-[0.2em]">Win Conditions</h2>
+</div>
+<ul class="space-y-3">
+<li class="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
+<span class="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
+<span class="text-sm font-medium text-[#E5E2E1]">Average view duration exceeding 65% of total length.</span>
+</li>
+<li class="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
+<span class="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
+<span class="text-sm font-medium text-[#E5E2E1]">Retention spike at the 12-second core value prop.</span>
+</li>
+<li class="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
+<span class="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
+<span class="text-sm font-medium text-[#E5E2E1]">Comment to View ratio above 1.5% in first hour.</span>
+</li>
+</ul>
+</div>
+<!-- Fail Conditions -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-secondary-container">
+<span class="material-symbols-outlined">cancel</span>
+<h2 class="text-[11px] font-black uppercase tracking-[0.2em]">Fail Conditions</h2>
+</div>
+<ul class="space-y-3">
+<li class="flex items-start gap-4 p-4 bg-secondary-container/5 border border-secondary-container/10 rounded-sm">
+<span class="material-symbols-outlined text-secondary-container text-sm mt-0.5">close</span>
+<span class="text-sm font-medium text-[#E5E2E1]">Hook drop-off &gt; 40% before the 5-second mark.</span>
+</li>
+<li class="flex items-start gap-4 p-4 bg-secondary-container/5 border border-secondary-container/10 rounded-sm">
+<span class="material-symbols-outlined text-secondary-container text-sm mt-0.5">close</span>
+<span class="text-sm font-medium text-[#E5E2E1]">Zero 'Rewatch' events during technical demonstration.</span>
+</li>
+<li class="flex items-start gap-4 p-4 bg-secondary-container/5 border border-secondary-container/10 rounded-sm">
+<span class="material-symbols-outlined text-secondary-container text-sm mt-0.5">close</span>
+<span class="text-sm font-medium text-[#E5E2E1]">High 'Skip' interaction during intro typography.</span>
+</li>
+</ul>
+</div>
+</section>
+<!-- Bottom: SHORTS TEST -->
+<section>
+<div class="bg-surface-container-lowest p-8 border border-outline-variant/10 border-l-4 border-l-secondary-container relative overflow-hidden">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-3 h-3 bg-secondary-container rounded-full animate-pulse shadow-[0_0_8px_rgba(151,1,0,0.8)]"></div>
+<span class="text-[#E5E2E1] font-headline font-black text-xs uppercase tracking-widest">TACTICAL ALERT: SHORTS TEST RECOMMENDED</span>
+</div>
+<div class="flex flex-col md:flex-row gap-8 items-center">
+<div class="flex-1 space-y-4">
+<p class="text-[#E5E2E1] text-lg font-medium leading-relaxed">
+                                Current hook metrics suggest high resonance for vertical displacement. Isolate the first 58 seconds and deploy as a 'Vertical Teaser' 2 hours prior to the main mission launch.
+                            </p>
+<div class="flex gap-4">
+<button class="bg-surface-container-high px-4 py-2 border border-outline-variant/30 text-[10px] font-black uppercase tracking-widest hover:bg-surface-bright transition-all text-[#E5E2E1]">Download Segment</button>
+<button class="bg-secondary-container text-white px-6 py-2 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-secondary-container/20">Initite Test Deploy</button>
+</div>
+</div>
+<div class="w-full md:w-64 h-32 bg-surface-container-low rounded-sm relative group overflow-hidden border border-outline-variant/5">
+<img class="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" data-alt="Abstract high-tech visualization of digital signal frequencies in a vertical format, matte neon accents, cinematic depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOs59IyLU96PssPdpnSy1M_2bVEOLXzSEZFD6t-pZ0zjn0uCFR9vB258TEXAWf5iGiHhE-O8wiodOxmKy2ze2SUPUlPy7UDBdSwidEhoEYkRqwUZyDZDadsOinCO1H7ubwpy4ZVi28mIGal7uIinJJaGHArfg5SjuoyNh4J4n2v_8m4jVGQrB5cUTlGhob8lgbCsOU2YZ3DXVid5CyVNgodV0q7z5rZwXTjsgYaDshzcyILLuk8455V-MevsCbHQeBJM0cm3igfgg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest to-transparent flex items-end p-4">
+<span class="text-[9px] font-bold text-[#E5E2E1]/50 tracking-widest uppercase">Target: 1.2M Reach Est.</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

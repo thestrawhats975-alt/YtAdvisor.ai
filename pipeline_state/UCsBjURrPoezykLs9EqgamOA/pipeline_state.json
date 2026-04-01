@@ -1,0 +1,13 @@
+{
+  "channel_id": "UCsBjURrPoezykLs9EqgamOA",
+  "channel_title": "Fireship",
+  "youtube_api_key": "AIzaSyCZyBCWI4W3HWUWs7llNZTawtKFonIDsk4",
+  "phase": "BOOTSTRAPPING",
+  "total_videos_on_channel": 0,
+  "videos_processed": 0,
+  "current_batch_index": 0,
+  "last_run_timestamp": 0.0,
+  "next_run_timestamp": 0.0,
+  "consecutive_failures": 0,
+  "last_error": ""
+}

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DimenzIq — GROWTH ENGINE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;family=Space+Mono&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-error-container": "#ffdad6",
+                "secondary-fixed-dim": "#ffb4a8",
+                "outline-variant": "#603e39",
+                "on-primary": "#690100",
+                "on-tertiary-fixed-variant": "#81281d",
+                "tertiary-fixed-dim": "#ffb4a8",
+                "secondary-fixed": "#ffdad4",
+                "on-secondary-fixed-variant": "#930100",
+                "on-tertiary": "#621109",
+                "tertiary-fixed": "#ffdad4",
+                "surface-container-lowest": "#0e0e0e",
+                "surface-container": "#201f1f",
+                "surface-bright": "#3a3939",
+                "inverse-surface": "#e5e2e1",
+                "surface": "#131313",
+                "on-primary-container": "#5c0000",
+                "on-error": "#690005",
+                "surface-variant": "#353534",
+                "on-tertiary-container": "#580904",
+                "on-secondary-fixed": "#410000",
+                "inverse-primary": "#c00100",
+                "surface-container-highest": "#353534",
+                "primary-fixed": "#ffdad4",
+                "tertiary": "#ffb4a8",
+                "on-primary-fixed-variant": "#930100",
+                "primary-container": "#ff5540",
+                "on-tertiary-fixed": "#410000",
+                "secondary-container": "#970100",
+                "secondary": "#ffb4a8",
+                "surface-container-high": "#2a2a2a",
+                "surface-container-low": "#1c1b1b",
+                "outline": "#b18780",
+                "on-surface-variant": "#ebbbb4",
+                "on-primary-fixed": "#410000",
+                "primary-fixed-dim": "#ffb4a8",
+                "on-surface": "#e5e2e1",
+                "on-secondary": "#690100",
+                "surface-tint": "#ffb4a8",
+                "error": "#ffb4ab",
+                "background": "#131313",
+                "inverse-on-surface": "#313030",
+                "surface-dim": "#131313",
+                "on-background": "#e5e2e1",
+                "primary": "#ffb4a8",
+                "tertiary-container": "#e16f5e",
+                "on-secondary-container": "#ff9f90",
+                "error-container": "#93000a",
+                "tactical-red": "#c0392b",
+                "tactical-green": "#27ae60"
+              },
+              fontFamily: {
+                "headline": ["Space Grotesk"],
+                "body": ["Inter"],
+                "label": ["Inter"],
+                "mono": ["Space Mono", "JetBrains Mono"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #0a0a0a;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-panel {
+            background: rgba(28, 27, 27, 0.4);
+            backdrop-filter: blur(12px);
+        }
+        .tonal-shift { background-color: #0A0A0A; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-hidden">
+<!-- Sidebar: Exact version from Screen 6 -->
+<aside class="h-screen w-64 flex-shrink-0 border-r border-[#1C1B1B] tonal-shift bg-[#0A0A0A] flex flex-col py-6 px-4 z-50 overflow-hidden fixed left-0 top-0">
+<!-- Brand Header -->
+<div class="mb-6 px-2">
+<h1 class="text-xl font-black text-[#E5E2E1] tracking-tighter uppercase font-headline">MISSION CONTROL</h1>
+<p class="text-[0.6875rem] font-bold uppercase tracking-wider text-[#FF0000] font-headline">DIMENZIQ TACTICAL</p>
+</div>
+<!-- Tactical Stats Sections -->
+<nav class="flex-1 space-y-5 overflow-y-auto no-scrollbar pb-4">
+<!-- Final Verdict -->
+<div class="space-y-0.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">FINAL VERDICT</span>
+<div class="text-5xl font-black text-[#00FF41] font-headline tracking-tighter">GO</div>
+</div>
+<!-- Metrics Grid -->
+<div class="space-y-6">
+<!-- Confidence -->
+<div class="space-y-1.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">CONFIDENCE</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#00FF41] animate-pulse"></span>
+<span class="text-sm font-bold text-[#00FF41] tracking-widest uppercase">HIGH</span>
+</div>
+<p class="text-[0.6875rem] font-mono text-[#E5E2E1]/40 leading-tight uppercase">
+                        High historical alignment with this content archetype.
+                    </p>
+</div>
+<!-- Satisfaction Risk Gauge -->
+<div class="space-y-2">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SATISFACTION RISK</span>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1C1B1B]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-[#FF0000]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="49" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center font-headline font-bold text-lg text-[#FF0000]">7.2</span>
+</div>
+</div>
+<!-- Creator Verdict -->
+<div class="space-y-1">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SMALL CREATOR VERDICT</span>
+<div>
+<span class="inline-block px-2 py-0.5 bg-[#00FF41]/10 border border-[#00FF41]/30 text-[#00FF41] text-[0.6875rem] font-black uppercase tracking-widest rounded-sm">CAN WIN</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Bottom Alert -->
+<div class="mt-auto pt-4 border-t border-[#1C1B1B]">
+<div class="bg-[#FF0000]/10 border border-[#FF0000]/20 p-3 rounded-sm flex items-start gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-lg animate-pulse" style="font-variation-settings: 'FILL' 1;">error</span>
+<div class="space-y-0.5">
+<p class="text-[0.625rem] font-bold text-[#FF0000] uppercase tracking-wider">TACTICAL ALERT</p>
+<p class="text-[0.75rem] font-medium leading-tight text-on-surface">Drop-off risk at 0:45</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Top Navigation: Exact version from Screen 6 -->
+<header class="h-16 flex-shrink-0 bg-[#131313]/80 backdrop-blur-xl border-b border-[#1C1B1B] flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#E5E2E1] font-headline tracking-tighter">DIMENZIQ</span>
+<div class="h-4 w-px bg-[#1C1B1B]"></div>
+<div class="flex gap-6">
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">VERDICT</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">MARKET</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">CREATIVE</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">EXECUTION</a>
+<a class="text-[#FF0000] border-b-2 border-[#FF0000] pb-2 font-headline font-bold text-sm tracking-widest" href="#">GROWTH</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-[#970100] text-[#E5E2E1] px-5 py-2 text-xs font-black uppercase tracking-widest rounded-sm hover:glow-sm transition-all active:scale-95">LAUNCH MISSION</button>
+<img alt="Commander Avatar" class="w-8 h-8 rounded-full border border-[#FF0000]/50 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqO240ldX39QP_R_0hXR20ke2jhaGm0Yix6q1SDP8UMs2692PGodfYIRl1e8yAIylpfiK4VWaD1jmnn5Zt00Bv6PVKQeYIWf-JpVYkRh_O14RP6tzyg5zfSZwR5bD92-i39Rkc0iJs_af-f89xoXDixC825XSAAbbA9IS49b7Pq5psZnOdkOofm8bZ7Hiz_YdZD-Im70NJUouEz9Uk8glzyG7qPCwmunQmrVzAwxwMoMLb02I7jcbrJUKqu52dvO-VFbYpDRQWE3g"/>
+</div>
+</header>
+<!-- Growth Content Scrollable Container -->
+<div class="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
+<div class="p-12 space-y-12 max-w-7xl mx-auto w-full">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 bg-tactical-red rounded-full"></div>
+<h2 class="text-tactical-red font-mono text-xs font-bold uppercase tracking-[0.2em]">GROWTH ENGINE</h2>
+</div>
+<!-- PINNED COMMENT -->
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<div class="flex items-center gap-2 text-tactical-red">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">push_pin</span>
+<span class="font-mono text-xs font-bold uppercase">PINNED COMMENT</span>
+</div>
+</div>
+<div class="relative group bg-surface-container-low p-6 rounded-sm border-l border-tactical-red/30">
+<button class="absolute top-4 right-4 text-on-surface-variant/40 hover:text-tactical-green transition-colors">
+<span class="material-symbols-outlined">content_copy</span>
+</button>
+<div class="pl-4 border-l-2 border-surface-variant">
+<p class="text-on-surface leading-relaxed text-sm">
+                            "If you missed the hidden detail at 04:22, you're missing 90% of the strategy. I've linked the full breakdown of the neural engine below. Who else thinks the hardware limit is the real bottleneck here? 👇"
+                        </p>
+<p class="mt-2 text-on-surface-variant/40 text-[11px] font-mono">0 Replies • 2 seconds ago</p>
+</div>
+</div>
+</section>
+<!-- COMMUNITY POST -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 text-tactical-red">
+<span class="material-symbols-outlined text-lg">campaign</span>
+<span class="font-mono text-xs font-bold uppercase">COMMUNITY POST — DROP 24H BEFORE UPLOAD</span>
+</div>
+<div class="relative group bg-surface-container-low p-6 rounded-sm border-l border-tactical-red/30">
+<button class="absolute top-4 right-4 text-on-surface-variant/40 hover:text-tactical-green transition-colors">
+<span class="material-symbols-outlined">content_copy</span>
+</button>
+<div class="pl-4 border-l-2 border-surface-variant">
+<p class="text-on-surface leading-relaxed text-sm">
+                            "The next one is going to change everything we know about tactical UI. Final rendering is 94% complete. Do you want the raw data file or the polished breakdown first? Vote below."
+                        </p>
+<div class="mt-4 grid grid-cols-2 gap-4">
+<div class="p-3 bg-surface-container-high border border-outline-variant/10 text-[11px] font-mono text-on-surface-variant/60">
+                                [ POLL OPTION 1: RAW DATA ]
+                            </div>
+<div class="p-3 bg-surface-container-high border border-outline-variant/10 text-[11px] font-mono text-on-surface-variant/60">
+                                [ POLL OPTION 2: POLISHED BREAKDOWN ]
+                            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- DESCRIPTION TIMESTAMPS -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 text-tactical-red">
+<span class="material-symbols-outlined text-lg">schedule</span>
+<span class="font-mono text-xs font-bold uppercase">DESCRIPTION TIMESTAMPS</span>
+</div>
+<div class="relative group bg-surface-container-lowest p-6 rounded-sm border border-outline-variant/10">
+<button class="absolute top-4 right-4 text-on-surface-variant/40 hover:text-tactical-green transition-colors">
+<span class="material-symbols-outlined">content_copy</span>
+</button>
+<pre class="font-mono text-[12px] text-on-surface/80 leading-loose">00:00 - The Kinetic Instrument Intro
+01:45 - Breaking the Grid: Asymmetric Layouts
+03:12 - Tonal Layering vs. Borders
+04:22 - THE SECRET REVEALED
+06:58 - Execution Strategy
+09:15 - Final Summary &amp; Next Mission</pre>
+</div>
+</section>
+<!-- NEXT VIDEO SERIES -->
+<section class="space-y-6 pb-8">
+<div class="flex items-center gap-2 text-tactical-red">
+<span class="material-symbols-outlined text-lg">next_plan</span>
+<span class="font-mono text-xs font-bold uppercase">NEXT VIDEO SERIES — STRATEGIC PIPELINE</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container p-6 rounded-sm relative border border-outline-variant/5">
+<span class="absolute top-4 right-4 px-2 py-1 bg-tactical-red/20 text-tactical-red text-[9px] font-mono font-bold rounded-sm">PRIORITY 1</span>
+<h3 class="text-on-surface font-headline font-bold text-lg leading-tight mt-4">The Death of Minimalism</h3>
+<p class="text-on-surface-variant/50 text-xs mt-3 leading-relaxed">
+                            Contrarian take on current design trends. High potential for high-retention debate.
+                        </p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container p-6 rounded-sm relative border border-outline-variant/5">
+<span class="absolute top-4 right-4 px-2 py-1 bg-yellow-500/20 text-yellow-500 text-[9px] font-mono font-bold rounded-sm">PRIORITY 2</span>
+<h3 class="text-on-surface font-headline font-bold text-lg leading-tight mt-4">Neural UI Architecture</h3>
+<p class="text-on-surface-variant/50 text-xs mt-3 leading-relaxed">
+                            Technical deep-dive into AI-assisted design systems. Targeted at pro developers.
+                        </p>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container p-6 rounded-sm relative border border-outline-variant/5">
+<span class="absolute top-4 right-4 px-2 py-1 bg-on-surface-variant/20 text-on-surface-variant/60 text-[9px] font-mono font-bold rounded-sm">PRIORITY 3</span>
+<h3 class="text-on-surface font-headline font-bold text-lg leading-tight mt-4">Tactical Soundscapes</h3>
+<p class="text-on-surface-variant/50 text-xs mt-3 leading-relaxed">
+                            How sound design elevates the cinematic UI feel. Low friction entry for general audience.
+                        </p>
+</div>
+</div>
+</section>
+<!-- SERIES POSITIONING -->
+<section class="bg-surface-container-low p-8 rounded-sm border-l-4 border-tactical-red mb-12">
+<div class="flex items-center gap-2 text-tactical-red mb-4">
+<span class="material-symbols-outlined text-lg">radar</span>
+<span class="font-mono text-xs font-bold uppercase tracking-widest">30-DAY POSITIONING</span>
+</div>
+<p class="text-on-surface font-headline text-2xl font-medium leading-tight max-w-4xl">
+                    "Transitioning the channel from 'General Design Tips' to 'High-Fidelity Engineering Intelligence' to capture the 1% elite market share in creative technology."
+                </p>
+<div class="mt-6 flex gap-8">
+<div>
+<span class="block text-[10px] font-mono text-on-surface-variant/40 uppercase mb-1">Target CPM Lift</span>
+<span class="text-tactical-green font-headline font-bold text-xl">+42%</span>
+</div>
+<div>
+<span class="block text-[10px] font-mono text-on-surface-variant/40 uppercase mb-1">Brand Authority Score</span>
+<span class="text-secondary font-headline font-bold text-xl">ELITE</span>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

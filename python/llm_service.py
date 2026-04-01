@@ -7,7 +7,8 @@ import google.generativeai as genai
 from pydantic import BaseModel, ValidationError
 
 from creator_profile import DerivedCreatorProfile
-from models import AnalystReport, CreativeStrategy, VideoData
+# Legacy — no longer used
+# from models import AnalystReport, CreativeStrategy, VideoData
 
 _MODEL_NAME = "gemini-2.5-flash"
 _EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=3)
@@ -140,7 +141,7 @@ def expand_idea_to_queries(idea: str) -> List[str]:
 # -------------------------------
 # VIDEO SUMMARY
 # -------------------------------
-def _build_video_summary(videos: List[VideoData]) -> str:
+def _build_video_summary(videos: List[Any]) -> str:
     return json.dumps([
         {
             "title": v.title,

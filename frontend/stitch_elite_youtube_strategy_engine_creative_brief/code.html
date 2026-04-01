@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;family=Space+Mono&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#e5e2e1",
+              "outline": "#b18780",
+              "on-secondary": "#690100",
+              "primary-fixed-dim": "#ffb4a8",
+              "on-primary-fixed": "#410000",
+              "on-tertiary-fixed": "#410000",
+              "on-secondary-container": "#ff9f90",
+              "on-primary-fixed-variant": "#930100",
+              "on-error": "#690005",
+              "on-tertiary-container": "#580904",
+              "on-secondary-fixed-variant": "#930100",
+              "surface-container-lowest": "#0e0e0e",
+              "tertiary": "#ffb4a8",
+              "on-tertiary-fixed-variant": "#81281d",
+              "secondary": "#ffb4a8",
+              "surface-tint": "#ffb4a8",
+              "surface-container-low": "#1c1b1b",
+              "background": "#131313",
+              "on-error-container": "#ffdad6",
+              "surface-container-high": "#2a2a2a",
+              "tertiary-fixed-dim": "#ffb4a8",
+              "primary-fixed": "#ffdad4",
+              "primary": "#ffb4a8",
+              "outline-variant": "#603e39",
+              "on-background": "#e5e2e1",
+              "secondary-fixed": "#ffdad4",
+              "surface-container": "#201f1f",
+              "on-primary": "#690100",
+              "inverse-on-surface": "#313030",
+              "on-surface-variant": "#ebbbb4",
+              "tertiary-container": "#e16f5e",
+              "error-container": "#93000a",
+              "on-tertiary": "#621109",
+              "tertiary-fixed": "#ffdad4",
+              "surface": "#131313",
+              "surface-container-highest": "#353534",
+              "on-secondary-fixed": "#410000",
+              "inverse-primary": "#c00100",
+              "surface-bright": "#3a3939",
+              "on-surface": "#e5e2e1",
+              "surface-dim": "#131313",
+              "primary-container": "#ff5540",
+              "secondary-fixed-dim": "#ffb4a8",
+              "secondary-container": "#970100",
+              "error": "#ffb4ab",
+              "surface-variant": "#353534",
+              "on-primary-container": "#5c0000",
+              "dimenziq-red": "#c0392b"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "mono": ["Space Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .ghost-border { border: 1px solid rgba(96, 62, 57, 0.15); }
+        .tonal-shift { background-color: #0A0A0A; }
+        .glow-red { box-shadow: 0 0 15px rgba(255, 0, 0, 0.2); }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-secondary-container selection:text-on-secondary overflow-hidden flex h-screen">
+<!-- SIDEBAR: MISSION CONTROL (EXACT COPY FROM SCREEN_6) -->
+<aside class="h-screen w-64 flex-shrink-0 border-r border-[#1C1B1B] tonal-shift bg-[#0A0A0A] flex flex-col py-6 px-4 z-50 overflow-hidden">
+<!-- Brand Header -->
+<div class="mb-6 px-2">
+<h1 class="text-xl font-black text-[#E5E2E1] tracking-tighter uppercase font-headline">MISSION CONTROL</h1>
+<p class="text-[0.6875rem] font-bold uppercase tracking-wider text-[#FF0000] font-headline">DIMENZIQ TACTICAL</p>
+</div>
+<!-- Tactical Stats Sections -->
+<nav class="flex-1 space-y-5 overflow-y-auto no-scrollbar pb-4">
+<!-- Final Verdict -->
+<div class="space-y-0.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">FINAL VERDICT</span>
+<div class="text-5xl font-black text-[#00FF41] font-headline tracking-tighter">GO</div>
+</div>
+<!-- Metrics Grid -->
+<div class="space-y-6">
+<!-- Confidence -->
+<div class="space-y-1.5">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">CONFIDENCE</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#00FF41] animate-pulse"></span>
+<span class="text-sm font-bold text-[#00FF41] tracking-widest uppercase">HIGH</span>
+</div>
+<p class="text-[0.6875rem] font-mono text-[#E5E2E1]/40 leading-tight uppercase">
+                    High historical alignment with this content archetype.
+                </p>
+</div>
+<!-- Satisfaction Risk Gauge -->
+<div class="space-y-2">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SATISFACTION RISK</span>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1C1B1B]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-[#FF0000]" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="49" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center font-headline font-bold text-lg text-[#FF0000]">7.2</span>
+</div>
+</div>
+<!-- Creator Verdict -->
+<div class="space-y-1">
+<span class="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SMALL CREATOR VERDICT</span>
+<div>
+<span class="inline-block px-2 py-0.5 bg-[#00FF41]/10 border border-[#00FF41]/30 text-[#00FF41] text-[0.6875rem] font-black uppercase tracking-widest rounded-sm">CAN WIN</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Bottom Alert -->
+<div class="mt-auto pt-4 border-t border-[#1C1B1B]">
+<div class="bg-[#FF0000]/10 border border-[#FF0000]/20 p-3 rounded-sm flex items-start gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-lg animate-pulse" style="font-variation-settings: 'FILL' 1;">error</span>
+<div class="space-y-0.5">
+<p class="text-[0.625rem] font-bold text-[#FF0000] uppercase tracking-wider">TACTICAL ALERT</p>
+<p class="text-[0.75rem] font-medium leading-tight text-on-surface">Drop-off risk at 0:45</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- MAIN CONTENT AREA -->
+<div class="flex-1 flex flex-col min-w-0 relative h-screen">
+<!-- NAVBAR (EXACT COPY FROM SCREEN_6 WITH CREATIVE ACTIVE) -->
+<header class="h-16 flex-shrink-0 bg-[#131313]/80 backdrop-blur-xl border-b border-[#1C1B1B] flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#E5E2E1] font-headline tracking-tighter">DIMENZIQ</span>
+<div class="h-4 w-px bg-[#1C1B1B]"></div>
+<div class="flex gap-6">
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">VERDICT</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">MARKET</a>
+<a class="text-[#E5E2E1] border-b-2 border-[#FF0000] pb-2 font-headline font-bold text-sm tracking-widest" href="#">CREATIVE</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">EXECUTION</a>
+<a class="text-[#E5E2E1]/40 hover:text-[#E5E2E1] transition-all font-headline font-bold text-sm tracking-widest" href="#">GROWTH</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-[#970100] text-[#E5E2E1] px-5 py-2 text-xs font-black uppercase tracking-widest rounded-sm hover:glow-sm transition-all active:scale-95">LAUNCH MISSION</button>
+<img alt="Commander Avatar" class="w-8 h-8 rounded-full border border-[#FF0000]/50 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqO240ldX39QP_R_0hXR20ke2jhaGm0Yix6q1SDP8UMs2692PGodfYIRl1e8yAIylpfiK4VWaD1jmnn5Zt00Bv6PVKQeYIWf-JpVYkRh_O14RP6tzyg5zfSZwR5bD92-i39Rkc0iJs_af-f89xoXDixC825XSAAbbA9IS49b7Pq5psZnOdkOofm8bZ7Hiz_YdZD-Im70NJUouEz9Uk8glzyG7qPCwmunQmrVzAwxwMoMLb02I7jcbrJUKqu52dvO-VFbYpDRQWE3g"/>
+</div>
+</header>
+<!-- MAIN SCROLLABLE CONTENT (KEEPING ORIGINAL CONTENT FROM SCREEN_86) -->
+<main class="flex-1 overflow-y-auto no-scrollbar relative">
+<div class="p-10 max-w-7xl mx-auto w-full space-y-12 pb-24">
+<!-- SECTION HEADER -->
+<div class="flex items-center gap-4">
+<span class="px-2 py-1 bg-secondary-container/20 text-secondary-container text-[10px] font-black tracking-widest uppercase rounded-sm border border-secondary-container/30">MODULE 03</span>
+<h2 class="text-secondary-container font-headline font-bold text-sm uppercase tracking-[0.3em]">CREATIVE PACKAGE</h2>
+<div class="h-px flex-1 bg-gradient-to-r from-secondary-container/30 to-transparent"></div>
+</div>
+<!-- MAIN TITLE CARD -->
+<section class="relative group">
+<div class="absolute -inset-0.5 bg-gradient-to-r from-secondary-container to-transparent opacity-20 rounded-sm blur transition duration-1000 group-hover:opacity-40"></div>
+<div class="relative bg-surface-container-lowest border border-secondary-container p-12 text-center flex flex-col items-center justify-center min-h-[320px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
+<span class="text-secondary-container font-label text-[9px] font-black uppercase tracking-[0.4em] mb-6">SUGGESTED TITLE</span>
+<h3 class="text-5xl md:text-7xl font-headline font-extrabold text-on-surface leading-tight tracking-tighter max-w-4xl">
+                        WHY ELITE CREATORS ARE <span class="text-primary">ABANDONING</span> THE GRID SYSTEM
+                    </h3>
+<div class="mt-8 flex flex-col items-center">
+<p class="text-on-surface/60 italic font-body text-lg max-w-2xl">
+                            "The paradox of perfection: how hyper-optimization is killing organic discovery in the 2024 landscape."
+                        </p>
+<div class="mt-6 flex items-center gap-2">
+<span class="w-12 h-px bg-outline-variant/30"></span>
+<span class="text-secondary-container font-label text-[10px] font-bold uppercase tracking-widest">TITLE PSYCHOLOGY</span>
+<span class="w-12 h-px bg-outline-variant/30"></span>
+</div>
+</div>
+</div>
+</section>
+<!-- TITLE VARIANTS -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- VARIANT A -->
+<div class="bg-surface-container-low ghost-border p-8 rounded-sm hover:bg-surface-container transition-colors relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4">
+<span class="px-3 py-1 bg-blue-900/40 text-blue-400 text-[9px] font-bold tracking-widest uppercase border border-blue-400/30 rounded-full">CURIOSITY</span>
+</div>
+<span class="text-secondary-container font-label text-[10px] font-black uppercase tracking-widest">VARIANT A</span>
+<h4 class="mt-6 text-2xl font-headline font-bold text-on-surface leading-snug">
+                        The "Invisible Architecture" Secret Every Pro Uses
+                    </h4>
+<p class="mt-4 text-on-surface/40 text-xs font-label leading-relaxed">
+                        Focused on intellectual gap-filling. High CTR for established audiences seeking deeper mastery.
+                    </p>
+</div>
+<!-- VARIANT B -->
+<div class="bg-surface-container-low ghost-border p-8 rounded-sm hover:bg-surface-container transition-colors relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 flex gap-2">
+<span class="px-3 py-1 bg-red-900/40 text-red-400 text-[9px] font-bold tracking-widest uppercase border border-red-400/30 rounded-full">FEAR</span>
+<span class="px-3 py-1 bg-green-900/40 text-green-400 text-[9px] font-bold tracking-widest uppercase border border-green-400/30 rounded-full">ASPIRATION</span>
+</div>
+<span class="text-secondary-container font-label text-[10px] font-black uppercase tracking-widest">VARIANT B</span>
+<h4 class="mt-6 text-2xl font-headline font-bold text-on-surface leading-snug">
+                        Stop Building "Perfect" UI: It's Costing You Reach
+                    </h4>
+<p class="mt-4 text-on-surface/40 text-xs font-label leading-relaxed">
+                        Immediate emotional trigger. Combines loss-aversion with the promise of increased growth.
+                    </p>
+</div>
+</section>
+<!-- THUMBNAIL BRIEF -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+<!-- CONCEPT CARD -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-container">brush</span>
+<span class="text-on-surface font-headline font-bold uppercase tracking-widest text-xs">THUMBNAIL CONCEPT</span>
+</div>
+<div class="aspect-video bg-surface-container-high rounded-sm overflow-hidden ghost-border relative group">
+<img alt="thumbnail concept preview" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="dramatic minimalist composition with a glowing red laser cutting through a matte black 3d geometric monolith with cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHWC00zj1mcftkNqWSiBIf0JK_MXGcMirN5aEJKyJwCtZGySF9kBT0qzbe-3S5ZzEgQsDeU67gz-nKwuay7hpivHyQEMIACdrryZYhcRwBXFhry6icU0k-hZnoEVjLEGhvytjwjB4LxOwwXLddbZHD8g7ZNONBzp_aD6RwoAigRS2_luttQXjSRCPnWllYivkIsP57LrI0vvC3dVVCdgoEuXzxL9sQKcK5M5PxYgnr-0LdwYs9t5Cod6jGASgph505pCSYl5qPagA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+<div class="absolute bottom-6 left-6">
+<span class="text-[10px] font-bold text-primary tracking-widest uppercase mb-1 block">VISUAL HOOK</span>
+<p class="text-sm font-body text-on-surface/80">Monolith destruction with neon fracture lines.</p>
+</div>
+</div>
+</div>
+<!-- RULE CARD -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-container">contrast</span>
+<span class="text-on-surface font-headline font-bold uppercase tracking-widest text-xs">CONTRAST RULE</span>
+</div>
+<div class="flex-1 bg-surface-container-low ghost-border p-8 rounded-sm">
+<ul class="space-y-6">
+<li class="flex items-start gap-4">
+<div class="w-6 h-6 rounded-full bg-secondary-container/10 border border-secondary-container flex items-center justify-center shrink-0">
+<span class="text-[10px] font-black text-secondary-container">01</span>
+</div>
+<div>
+<p class="text-on-surface font-bold text-sm uppercase font-headline">The 80/20 Rule</p>
+<p class="text-on-surface/40 text-xs mt-1 leading-relaxed">80% dark surfaces, 20% high-intensity tactical red accents for maximum visual punch.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<div class="w-6 h-6 rounded-full bg-secondary-container/10 border border-secondary-container flex items-center justify-center shrink-0">
+<span class="text-[10px] font-black text-secondary-container">02</span>
+</div>
+<div>
+<p class="text-on-surface font-bold text-sm uppercase font-headline">Depth Stacking</p>
+<p class="text-on-surface/40 text-xs mt-1 leading-relaxed">Foreground subject at 100% saturation, background elements at 30% with heavy blur.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<div class="w-6 h-6 rounded-full bg-secondary-container/10 border border-secondary-container flex items-center justify-center shrink-0">
+<span class="text-[10px] font-black text-secondary-container">03</span>
+</div>
+<div>
+<p class="text-on-surface font-bold text-sm uppercase font-headline">Human Element</p>
+<p class="text-on-surface/40 text-xs mt-1 leading-relaxed">Center-weighting facial expressions with specific directional light matching the hook.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- TEXT OVERLAY SECTION -->
+<section class="flex flex-col items-center">
+<div class="bg-surface-container-high ghost-border p-10 rounded-sm w-full max-w-2xl text-center relative">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-background border border-secondary-container/30">
+<span class="text-secondary-container font-label text-[10px] font-black uppercase tracking-[0.2em]">TEXT OVERLAY</span>
+</div>
+<h5 class="mt-4 text-4xl md:text-5xl font-mono font-black text-on-surface uppercase tracking-tight leading-none italic">
+                        SYSTEM <span class="text-secondary-container">FAILURE</span>
+</h5>
+<div class="mt-8 flex justify-center gap-8">
+<div class="text-center">
+<span class="block text-[10px] font-bold text-on-surface/30 uppercase tracking-widest mb-1">FONT</span>
+<span class="text-xs font-mono text-primary uppercase">ROBOTO MONO BOLD</span>
+</div>
+<div class="text-center">
+<span class="block text-[10px] font-bold text-on-surface/30 uppercase tracking-widest mb-1">COLOR</span>
+<span class="text-xs font-mono text-primary uppercase">#FFB4A8</span>
+</div>
+<div class="text-center">
+<span class="block text-[10px] font-bold text-on-surface/30 uppercase tracking-widest mb-1">EFFECT</span>
+<span class="text-xs font-mono text-primary uppercase">GLITCH OFFSET</span>
+</div>
+</div>
+</div>
+</section>
+<!-- FOOTER STATUS -->
+<footer class="pt-12 flex justify-between items-center border-t border-outline-variant/10">
+<div class="flex items-center gap-6">
+<div>
+<span class="block text-[9px] font-bold text-on-surface/30 uppercase tracking-[0.3em]">CREATIVE HASH</span>
+<span class="text-[11px] font-mono text-on-surface/60">DX-992-BETA-CP</span>
+</div>
+<div class="w-px h-8 bg-outline-variant/20"></div>
+<div>
+<span class="block text-[9px] font-bold text-on-surface/30 uppercase tracking-[0.3em]">GENERATE DATE</span>
+<span class="text-[11px] font-mono text-on-surface/60">OCT 24 2024</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 bg-surface-container-high hover:bg-surface-bright text-on-surface text-[10px] font-bold uppercase tracking-widest border border-outline-variant/20 transition-all">
+                        EXPORT ASSETS
+                    </button>
+<button class="px-6 py-2 bg-secondary-container text-on-secondary text-[10px] font-bold uppercase tracking-widest transition-all hover:brightness-110">
+                        FINALIZE BRIEF
+                    </button>
+</div>
+</footer>
+</div>
+</main>
+<!-- FLOATING ACTION (CONTEXTUAL) -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-secondary-container rounded-sm flex items-center justify-center shadow-[0_10px_30px_rgba(151,1,0,0.4)] group transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-secondary text-2xl" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<div class="absolute right-16 px-4 py-2 bg-surface-container-highest text-on-surface text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-outline-variant/20">
+                QUICK OPTIMIZE
+            </div>
+</button>
+</div>
+</div>
+</body></html>

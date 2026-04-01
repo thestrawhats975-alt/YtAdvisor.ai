@@ -1,172 +1,101 @@
 import json
 import time
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import google.generativeai as genai
 from pydantic import BaseModel
 
-from creator_profile import DerivedCreatorProfile
+from api_models import AgentContext
 import llm_service
 
 
-class CanSmallCreatorWin(BaseModel):
-    verdict: str  # "YES / HARD / NO"
-    confidence: str  # "LOW / MEDIUM / HIGH"
+class ContentGapItem(BaseModel):
+    gap: str
+    source: str
 
 
 class AnalystAgentOutput(BaseModel):
     market_truth: str
     dominant_force: str
-    opportunity: str
-    risk: str
-    content_gaps: List[str]
-    can_small_creator_win: CanSmallCreatorWin
-    reasoning: str
+    competitor_weakness: str
+    audience_craving: str
+    content_gaps: List[ContentGapItem]  # Exactly 3 items
+    small_creator_verdict: str  # Must be exactly: "CAN_WIN", "HARD", or "AVOID"
+    small_creator_reason: str
+    algorithm_signal: str
+    satisfaction_risk: int  # 1-10
+    content_archetype: str  # Must be exactly: "CORE_AUDIENCE", "VIRAL_REACH", or "SEARCH_EVERGREEN"
+    channel_strength: str
+    channel_risk: str
 
 
 def run_analyst_agent(
-    idea: str,
-    features: dict,
-    creator_profile: Optional[DerivedCreatorProfile],
-    is_monopoly: bool = False,
-    is_personality: bool = False,
-    is_fragmented: bool = False,
-    content_mode: str = "SEARCH",
+    context: AgentContext,
+    graph_signals: Optional[Any] = None,
+    median_subscriber_count: Optional[int] = None,
 ) -> dict:
     print("[analyst] starting...")
     t0 = time.monotonic()
 
-    creator_mode = "generic"
-    subscriber_count = None
-    channel_size_bucket = "small"
-    growth_stage = "early"
-    competition_tolerance = "low"
-    performance_ratio = 0.0
+    system_prompt = (
+        "Be a YouTube market analyst. Evaluate market reality with brutal honesty based only on the data provided\n"
+        "market_truth: One bold sentence stating what this market actually rewards right now. Under 20 words\n"
+        "dominant_force: One sentence — who wins here and the single specific structural reason why. Under 20 words\n"
+        "competitor_weakness: The specific structural failure of the top competing video. Where it loses viewers and why. Under 20 words. Derive from top_comments\n"
+        "audience_craving: One sentence from comment patterns only — what viewers are begging for that nobody delivers. Under 20 words. Must reference the actual comments provided\n"
+        "content_gaps: Exactly 3 items. Each gap must be derived STRICTLY from the provided top_comments — not from general knowledge. The source field must say where the gap was found e.g. \"Repeated in 3 competitor comments\" or \"Top upvoted complaint\"\n"
+        "small_creator_verdict: Infer from competitor subscriber counts in the data. If median competitor subscriber count is above 500k use \"AVOID\". If 100k-500k use \"HARD\". Below 100k use \"CAN_WIN\". Must be exactly one of: \"CAN_WIN\", \"HARD\", \"AVOID\"\n"
+        "small_creator_reason: One sentence explaining the small_creator_verdict\n"
+        "algorithm_signal: One specific sentence about how this content type and topic structure will interact with the YouTube algorithm — based on the topic category and competitor patterns observed\n"
+        "satisfaction_risk: Integer 1-10. Measures the gap between what the video title promises and what can realistically be delivered given the complexity of the topic. Higher = bigger gap = higher risk of viewer disappointment\n"
+        "content_archetype: Classify this idea as exactly one of: \"CORE_AUDIENCE\" (educational, evergreen, serves existing fans), \"VIRAL_REACH\" (emotional, broad appeal, shareable), \"SEARCH_EVERGREEN\" (search-intent driven, tutorial, how-to). Must be exactly one of these three strings\n"
+        "channel_strength: If creator_dna is provided, one sentence explaining how that creator's specific style is a strategic weapon in this exact market. If no creator_dna provided, output \"Provide creator DNA for personalised analysis\"\n"
+        "channel_risk: If creator_dna is provided, one sentence explaining what in their style works against them specifically in this market. If no creator_dna provided, output \"Provide creator DNA for personalised analysis\"\n"
+        "No paragraphs. All strings under 25 words except content_gaps items. If data is insufficient for any field output \"Insufficient data\" — never hallucinate"
+    )
 
-    if creator_profile is not None:
-        creator_mode = creator_profile.mode
-        subscriber_count = creator_profile.subscriber_count
-        channel_size_bucket = creator_profile.channel_size_bucket
-        growth_stage = creator_profile.growth_stage
-        competition_tolerance = creator_profile.competition_tolerance
-        performance_ratio = creator_profile.performance_ratio
+    creator_dna = context.request.creator_dna
+    user_prompt = (
+        "VIDEO IDEA:\n"
+        f"{context.request.video_idea}\n\n"
+        "CREATOR DNA:\n"
+        f"{creator_dna if creator_dna is not None else 'Not provided'}\n\n"
+        "COMPETITOR THUMBNAILS:\n"
+        f"{json.dumps(context.competitors.thumbnails, indent=2)}\n\n"
+        "COMPETITOR COMMENTS — PRIMARY DATA SOURCE FOR GAPS:\n"
+        f"{context.competitors.top_comments}\n"
+    )
 
-    # Add transcript sample if available
-    transcript_sample = features.get("transcript_sample", "")
-
-    breakout_summary = features.get("breakout_summary")
-    creator_distribution = features.get("creator_distribution")
-    title_patterns = features.get("title_patterns")
-    content_clusters = features.get("content_clusters")
-    freshness = features.get("freshness")
-    velocity_metrics = features.get("velocity_metrics")
-    market_summary = features.get("market_summary", {}) or {}
-    entry_barrier = market_summary.get("entry_barrier")
-    competition_level = market_summary.get("competition_level")
-
-    if creator_mode == "generic":
-        system_prompt = (
-            "You are a YouTube market analyst evaluating ideas for a general audience.\n\n"
-            "Your job is to:\n"
-            "* Understand the competitive landscape\n"
-            "* Identify real opportunities and risks\n\n"
-            "STRICT RULES:\n"
-            "* Do NOT generate titles or creative ideas\n"
-            "* Do NOT give generic advice\n"
-            "* Base your reasoning ONLY on provided data\n"
-            "* market_truth must be 1-2 lines max\n"
-            "* content_gaps must be specific\n\n"
-            "STRICT FORMATTING RULE: Do not write essays. Use very simple words. Maximum 15 words per sentence. "
-            "Never use academic jargon. Give direct, punchy, actionable facts."
+    # Append graph signals if available
+    if graph_signals is not None:
+        user_prompt += (
+            "\n\nMARKET GRAPH SIGNALS (derived from real YouTube data):\n"
+            f"- Market structure: {getattr(graph_signals, 'market_structure_summary', 'Not available')}\n"
+            f"- Entry opportunity: {getattr(graph_signals, 'entry_opportunity_summary', 'Not available')}\n"
+            f"- Small creator opportunity: {getattr(graph_signals, 'small_creator_opportunity', 'Not available')}\n"
+            f"- Monopoly detected: {getattr(graph_signals, 'is_monopoly', getattr(graph_signals, 'monopoly_detected', 'Not available'))}\n"
+            f"- Breakout concentration: {getattr(graph_signals, 'breakout_concentration', 'Not available')}\n"
+            f"- Analyst narrative: {getattr(graph_signals, 'analyst_narrative', getattr(graph_signals, 'analyst_summary', 'Not available'))}\n"
+            "Treat these signals as ground truth from real data.\n"
         )
-        user_prompt = (
-            f"Idea:\n{idea}\n\n"
-            "Market Signals:\n"
-            f"* Breakout Summary: {breakout_summary}\n"
-            f"* Creator Distribution: {creator_distribution}\n"
-            f"* Title Patterns: {title_patterns}\n"
-            f"* Content Clusters: {content_clusters}\n"
-            f"* Freshness: {freshness}\n"
-            f"* Velocity Metrics: {velocity_metrics}\n"
-            f"* Consistency: {features.get('consistency')}\n"
-            f"* Market Dynamics: {features.get('market_dynamics')}\n"
-            f"* Anomaly Signals: MONOPOLY={is_monopoly}, PERSONALITY={is_personality}, FRAGMENTED={is_fragmented}\n\n"
-            "TRANSCRIPT ANALYSIS:\n"
-            f"- Hook Style: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('hook_style')}\n"
-            f"- Pacing: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('pacing')}\n"
-            f"- Tone: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('tone')}\n\n"
-            "CRITICAL SIGNALS:\n"
-            f"- Entry Barrier: {entry_barrier}\n"
-            f"- Competition Level: {competition_level}\n\n"
-            "Evaluate this idea purely on general market data."
-        )
-    else:
-        # Dynamically build context to handle empty frontend fields safely
-        context_parts = [
-            f"* Channel Size: {channel_size_bucket} ({subscriber_count} subs)",
-            f"* Growth Stage: {growth_stage}",
-            f"* Performance Ratio: {performance_ratio}",
-            f"* Competition Tolerance: {competition_tolerance}"
-        ]
-        if creator_profile and creator_profile.strengths:
-            context_parts.append(f"* Strengths: {', '.join(creator_profile.strengths)}")
-        if creator_profile and creator_profile.weaknesses:
-            context_parts.append(f"* Weaknesses: {', '.join(creator_profile.weaknesses)}")
-        if creator_profile and creator_profile.interests:
-            context_parts.append(f"* Interests: {', '.join(creator_profile.interests)}")
-        if creator_profile and creator_profile.recent_videos:
-            past_vids_str = json.dumps([v.model_dump() for v in creator_profile.recent_videos])
-            context_parts.append(f"* Past Video Performance: {past_vids_str}")
-            
-        dynamic_creator_context = "\n".join(context_parts)
 
-        system_prompt = (
-            "You are a private YouTube market analyst for a specific creator.\n\n"
-            "Your job is to evaluate if the market is safe or hostile for THIS creator's size, based on their explicit skills, past videos, and the content mode.\n\n"
-            "CRITICAL STRATEGY RULES BASED ON CONTENT MODE:\n"
-            "1. If content_mode is 'SEARCH' (Tutorials, Tech, Finance): Competition is bad. Niche down. Find the specific gap big channels ignored. Solve a specific problem.\n"
-            "2. If content_mode is 'BROWSE' (Vlogs, Food, Challenges, Entertainment): Competition is GOOD. It means high demand. Do NOT niche down. Instead, maximize the emotional hook, pacing, and visual curiosity. Beat them with better angles, not smaller niches.\n\n"
-            "STRICT RULES:\n"
-            "* Base your reasoning on the creator's channel size and competition tolerance.\n"
-            "* market_truth must be 1-2 lines max\n"
-            "* content_gaps must be specific\n\n"
-            "STRICT FORMATTING RULE: Do not write essays. Use very simple words. Maximum 15 words per sentence. "
-            "Never use academic jargon. Give direct, punchy, actionable facts."
-        )
-        user_prompt = (
-            f"Idea:\n{idea}\n"
-            f"Content Mode: {content_mode}\n\n"
-            "Market Signals:\n"
-            f"* Breakout Summary: {breakout_summary}\n"
-            f"* Creator Distribution: {creator_distribution}\n"
-            f"* Title Patterns: {title_patterns}\n"
-            f"* Content Clusters: {content_clusters}\n"
-            f"* Freshness: {freshness}\n"
-            f"* Velocity Metrics: {velocity_metrics}\n"
-            f"* Consistency: {features.get('consistency')}\n"
-            f"* Market Dynamics: {features.get('market_dynamics')}\n"
-            f"* Anomaly Signals: MONOPOLY={is_monopoly}, PERSONALITY={is_personality}, FRAGMENTED={is_fragmented}\n\n"
-            "TRANSCRIPT ANALYSIS:\n"
-            f"- Hook Style: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('hook_style')}\n"
-            f"- Pacing: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('pacing')}\n"
-            f"- Tone: {features.get('transcript_analysis', {}).get('transcript_summary', {}).get('tone')}\n\n"
-            "CRITICAL SIGNALS:\n"
-            f"- Entry Barrier: {entry_barrier}\n"
-            f"- Competition Level: {competition_level}\n\n"
-            "Creator Context:\n"
-            f"{dynamic_creator_context}\n\n"
-            "CREATOR PROFILE ADJUSTMENT RULES:\n"
-            "- If performance_ratio is low (<0.1) → prioritize safer ideas\n"
-            "- If channel_size_bucket is 'small' → focus on differentiation\n"
-            "- If competition_tolerance is 'low' → avoid saturated markets\n"
-            "Apply these rules to your analysis."
+    # Append median subscriber count if available
+    if median_subscriber_count is not None and median_subscriber_count > 0:
+        user_prompt += (
+            f"\nMEDIAN COMPETITOR SUBSCRIBER COUNT: {median_subscriber_count:,}\n"
+            "Use this to determine small_creator_verdict:\n"
+            "- Above 500,000 → AVOID\n"
+            "- 100,000 to 500,000 → HARD\n"
+            "- Below 100,000 → CAN_WIN\n"
+            "This is real data from the YouTube API — do not override it with assumptions.\n"
         )
 
     model = genai.GenerativeModel(
-        llm_service._MODEL_NAME,  # reuse existing model name
+        llm_service._MODEL_NAME,
         system_instruction=system_prompt,
     )
+
     try:
         response = llm_service.generate_content_with_timeout(
             model,
@@ -176,24 +105,25 @@ def run_analyst_agent(
                 response_mime_type="application/json",
                 response_schema=AnalystAgentOutput,
             ),
-            timeout_s=90,
+            timeout_s=150,
         )
     except Exception:
         traceback.print_exc()
-        result = {
-            "market_truth": "Unknown",
-            "dominant_force": "Unknown",
-            "opportunity": "Insufficient signals to judge.",
-            "risk": "Risk cannot be assessed.",
-            "content_gaps": [],
-            "can_small_creator_win": {"verdict": "HARD", "confidence": "LOW"},
-            "reasoning": "LLM request timed out or failed.",
-        }
-        print({
-            "stage": "analyst",
-            "idea": idea,
-            "output": result,
-        })
+        result = AnalystAgentOutput(
+            market_truth="Insufficient data",
+            dominant_force="Insufficient data",
+            competitor_weakness="Insufficient data",
+            audience_craving="Insufficient data",
+            content_gaps=[ContentGapItem(gap="Insufficient data", source="Analysis failed")],
+            small_creator_verdict="HARD",
+            small_creator_reason="Insufficient data",
+            algorithm_signal="Insufficient data",
+            satisfaction_risk=5,
+            content_archetype="CORE_AUDIENCE",
+            channel_strength="Insufficient data",
+            channel_risk="Insufficient data",
+        ).model_dump()
+        print({"stage": "analyst", "output": result})
         print(f"[analyst] done in {time.monotonic() - t0:.1f}s")
         return result
 
@@ -204,29 +134,21 @@ def run_analyst_agent(
         result = parsed.model_dump()
     except Exception:
         traceback.print_exc()
-        # Fallback: attempt a simple JSON extraction; otherwise return safe defaults.
-        try:
-            start = raw_text.find("{")
-            end = raw_text.rfind("}")
-            obj = json.loads(raw_text[start : end + 1])
-            result = AnalystAgentOutput.model_validate(obj).model_dump()
-        except Exception:
-            traceback.print_exc()
-            result = {
-                "market_truth": "Unknown",
-                "dominant_force": "Unknown",
-                "opportunity": "Insufficient signals to judge.",
-                "risk": "Risk cannot be assessed.",
-                "content_gaps": [],
-                "can_small_creator_win": {"verdict": "HARD", "confidence": "LOW"},
-                "reasoning": "LLM output could not be parsed reliably.",
-            }
+        result = AnalystAgentOutput(
+            market_truth="Insufficient data",
+            dominant_force="Insufficient data",
+            competitor_weakness="Insufficient data",
+            audience_craving="Insufficient data",
+            content_gaps=[ContentGapItem(gap="Insufficient data", source="Analysis failed")],
+            small_creator_verdict="HARD",
+            small_creator_reason="Insufficient data",
+            algorithm_signal="Insufficient data",
+            satisfaction_risk=5,
+            content_archetype="CORE_AUDIENCE",
+            channel_strength="Insufficient data",
+            channel_risk="Insufficient data",
+        ).model_dump()
 
-    print({
-        "stage": "analyst",
-        "idea": idea,
-        "output": result
-    })
+    print({"stage": "analyst", "output": result})
     print(f"[analyst] done in {time.monotonic() - t0:.1f}s")
     return result
-
