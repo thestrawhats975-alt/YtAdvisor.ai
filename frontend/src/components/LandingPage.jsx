@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
 
 const LandingPage = () => {
   const canvasRef = useRef(null);
@@ -78,24 +79,7 @@ const LandingPage = () => {
 
   return (
     <div className="bg-surface font-body text-on-surface selection:bg-primary/30 selection:text-primary min-h-screen">
-      {/* Top Navigation */}
-      <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-[#131313] bg-opacity-90 backdrop-blur-xl border-b border-[#2A2A2A] dark:border-[#2A2A2A]">
-        <div className="text-2xl font-bold tracking-tighter text-[#FF0000] dark:text-[#FF0000] font-['Space_Grotesk'] uppercase">
-          DimenzIq
-        </div>
-        <div className="hidden md:flex items-center gap-10 font-['Space_Grotesk'] font-bold tracking-tight">
-          <Link className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 transition-colors" to="/">Strategy</Link>
-          <Link className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 transition-colors" to="/">Intelligence</Link>
-          <Link className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 transition-colors" to="/analyze">Input</Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-zinc-400 hover:bg-zinc-800/50 p-2 rounded-full cursor-pointer transition-all active:scale-95">notifications</span>
-          <span className="material-symbols-outlined text-zinc-400 hover:bg-zinc-800/50 p-2 rounded-full cursor-pointer transition-all active:scale-95">settings</span>
-          <button className="bg-[#FF0000] px-6 py-2 text-xs font-bold uppercase tracking-widest hover:shadow-[0_0_15px_rgba(255,0,0,0.4)] active:scale-95 transition-all duration-100 ease-in-out rounded-sm text-white">
-            Deploy
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="relative">
         <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
@@ -341,7 +325,7 @@ const LandingPage = () => {
             <p className="text-on-surface/60 max-w-xl mx-auto mb-12 text-sm leading-relaxed">Early access slots are strictly limited to maintain computational priority for existing commanders. Apply for credentials below.</p>
             <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
               <input className="bg-surface-container-lowest border border-outline-variant/20 rounded-sm px-6 py-4 w-full md:w-80 text-xs font-label focus:outline-none focus:border-primary transition-colors text-on-surface" placeholder="ENTER_EMAIL_ADDRESS" type="email"/>
-              <button className="bg-secondary-container px-12 py-4 text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:shadow-[0_0_30px_rgba(255,0,0,0.3)] transition-all text-white bg-[#FF0000]">Initialize Access</button>
+              <Link to="/signup" className="bg-[#970100] hover:bg-[#b50100] px-12 py-4 text-xs font-bold uppercase tracking-[0.2em] rounded-sm hover:shadow-[0_0_30px_rgba(255,0,0,0.3)] transition-all text-white">Initialize Access</Link>
             </div>
           </div>
         </section>

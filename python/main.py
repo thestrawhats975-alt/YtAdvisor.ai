@@ -48,11 +48,28 @@ from api_models import (
 from analyst_agent import run_analyst_agent
 from strategist_agent import run_strategist_agent
 from optimizer_agent import run_optimizer_agent
+from audience_pipeline import start_pipeline, get_pipeline_status, get_pipeline_dna_string, PipelinePhase
 
 
 class AutoAnalyzeRequest(_BaseModel):
     video_idea: str
     creator_dna: _Optional[str] = None
+
+
+class ChannelPipelineRequest(_BaseModel):
+    channel_id: str
+    youtube_api_key: _Optional[str] = None
+
+
+class ChannelPipelineStatus(_BaseModel):
+    channel_id: str
+    channel_title: str
+    phase: str
+    videos_processed: int
+    total_videos_on_channel: int
+    is_reliable: bool
+    last_error: str
+    dna_summary: _Optional[str] = None
 
 
 def _analyst_graph_view(mg) -> SimpleNamespace:
@@ -361,3 +378,38 @@ def analyze_auto(payload: AutoAnalyzeRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {str(e)}") from e
+
+
+@app.post("/api/v1/audience/pipeline/start", status_code=202)
+def start_audience_pipeline(payload: ChannelPipelineRequest):
+    api_key = payload.youtube_api_key or os.getenv("YOUTUBE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="YOUTUBE_API_KEY not set in environment.")
+
+    result = start_pipeline(payload.channel_id, api_key)
+    return {"accepted": True, "channel_id": result.channel_id, "phase": result.phase}
+
+
+@app.get(
+    "/api/v1/audience/pipeline/status/{channel_id}",
+    response_model=ChannelPipelineStatus,
+)
+def audience_pipeline_status(channel_id: str):
+    state = get_pipeline_status(channel_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Pipeline not found for channel.")
+
+    dna_summary = None
+    if state.phase in (PipelinePhase.ENRICHING, PipelinePhase.COMPLETE):
+        dna_summary = get_pipeline_dna_string(channel_id)
+
+    return ChannelPipelineStatus(
+        channel_id=state.channel_id,
+        channel_title=state.channel_title,
+        phase=state.phase.value,
+        videos_processed=state.videos_processed,
+        total_videos_on_channel=state.total_videos_on_channel,
+        is_reliable=state.is_reliable,
+        last_error=state.last_error,
+        dna_summary=dna_summary,
+    )

@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
 
 const InputPage = () => {
   const [formData, setFormData] = useState({
-    videoIdea: '',
-    creatorDna: '',
-    searchVolume: '',
-    keywordSaturation: 'High',
-    topVideoVelocity: '',
-    competitorThumbnails: '',
-    competitorComments: ''
+    videoIdea: ''
   });
 
   const navigate = useNavigate();
@@ -34,26 +29,16 @@ const InputPage = () => {
 
     try {
       const payload = {
-        request: {
-          video_idea: formData.videoIdea,
-          creator_dna: formData.creatorDna
-        },
-        signals: {
-          search_volume: parseInt(formData.searchVolume, 10) || 0,
-          keyword_saturation: formData.keywordSaturation,
-          top_video_velocity: parseInt(formData.topVideoVelocity, 10) || 0
-        },
-        competitors: {
-          thumbnails: [formData.competitorThumbnails], // Provided as input array string originally but schema wants array of strings
-          top_comments: formData.competitorComments
-        }
+        video_idea: formData.videoIdea
       };
 
-      const response = await fetch('/api/v1/analyze', {
+      const baseUrl = import.meta.env.BACKEND_BASE_URL || '';
+      const response = await fetch(`${baseUrl}/api/analysis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
 
@@ -62,7 +47,6 @@ const InputPage = () => {
       }
 
       const data = await response.json();
-      console.log('Server response:', data);
       
       // Cache the analysis response instantly to endure browser page reloads!
       localStorage.setItem('dimenziq_analysis', JSON.stringify(data));
@@ -80,27 +64,9 @@ const InputPage = () => {
 
   return (
     <div className="bg-[#0A0A0A] text-[#e5e2e1] font-body min-h-screen selection:bg-spectre-red/30 selection:text-on-primary">
-      {/* Top Navigation Shell */}
-      <header className="flex justify-between items-center w-full px-6 py-4 sticky top-0 z-50 backdrop-blur-xl bg-[#131313] border-b border-[#603E39]/15 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="text-xl font-black tracking-tighter text-[#E5E2E1] font-['Space_Grotesk'] uppercase">SPECTRE</Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link className="font-['Space_Grotesk'] font-bold tracking-tight uppercase text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" to="/">Strategy</Link>
-            <Link className="font-['Space_Grotesk'] font-bold tracking-tight uppercase text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" to="/">Intelligence</Link>
-            <Link className="font-['Space_Grotesk'] font-bold tracking-tight uppercase text-[#FFB4A8] border-b-2 border-[#FFB4A8] pb-1" to="/analyze">Input</Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 text-xs font-bold uppercase tracking-widest border border-white/5 transition-all">
-            New Analysis
-          </button>
-          <div className="w-8 h-8 rounded-full border border-primary/20 bg-surface-container-highest overflow-hidden">
-            <img alt="User Tactical Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVNGZmY3YZLmtfLi31EGN-gwp4TGhK16hNOtUdqqNFPqzEXsw-V4hYUmelmj2XEjy1Yd3iBj-mZQfpq6K4DEfyPG66p8DBv8XZDcETSoAUsyz5E23cIBTd6aBff-0ohr2mrpALMSKrnnG8cxLQ_sHRRo2D9_rLlZW7PZj5d9hotArPeA7Azmww6ogk0L5e3pnQAgoUYJC8NqFOajY4TBiEve8V4Hq0_dJzKbxbRjiiVtrmyrwCfPEqpEM9lOlatoMCac9_ld8vdec"/>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
-      <main className="flex min-h-[calc(100vh-72px)]">
+      <main className="flex min-h-[calc(100vh-72px)] pt-[72px]">
         {/* Side Navigation Shell */}
         <aside className="hidden lg:flex flex-col fixed left-0 top-[72px] h-[calc(100vh-72px)] w-64 z-40 bg-[#0E0E0E] border-r border-[#603E39]/15 font-['Inter'] text-[0.6875rem] uppercase tracking-[0.05em]">
           <div className="p-6">
@@ -171,122 +137,13 @@ const InputPage = () => {
                 </div>
               </div>
 
-              {/* Contextual Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="block font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface/40 ml-1">Channel DNA (Context)</label>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[10px] text-spectre-red animate-pulse">sensors</span>
-                    <p className="font-label text-[9px] text-on-surface/30 uppercase tracking-widest">Manual Injection</p>
-                  </div>
-                </div>
-                <div className="bg-white/[0.02] backdrop-blur-[10px] border border-white/5 relative corner-accent group transition-all duration-300 focus-within:border-white/20">
-                  <textarea 
-                    className="w-full bg-transparent border-none text-on-surface/70 p-4 text-xs placeholder:text-on-surface/10 focus:ring-0 transition-all resize-none font-body tracking-wide" 
-                    name="creatorDna" 
-                    placeholder="Injection point for channel metadata..." 
-                    rows="3"
-                    value={formData.creatorDna}
-                    onChange={handleChange}
-                    required
-                  ></textarea>
-                </div>
-              </div>
-
-              {/* TESTING_DATA (MVP_ONLY) Section */}
-              <div className="pt-8 space-y-6 border-t border-white/5">
-                <div className="flex items-center gap-4">
-                  <label className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-spectre-red">Testing_Data (MVP_ONLY)</label>
-                  <div className="flex-1 h-[1px] bg-spectre-red/10"></div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Search Volume */}
-                  <div className="space-y-2">
-                    <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Search Volume</label>
-                    <div className="bg-white/[0.02] backdrop-blur-[10px] border border-white/5 relative corner-accent">
-                      <input 
-                        className="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0" 
-                        name="searchVolume" 
-                        placeholder="e.g. 100000" 
-                        type="number"
-                        value={formData.searchVolume}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Keyword Saturation */}
-                  <div className="space-y-2">
-                    <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Keyword Saturation</label>
-                    <div className="bg-white/[0.02] backdrop-blur-[10px] border border-white/5 relative corner-accent">
-                      <select 
-                        className="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0 appearance-none" 
-                        name="keywordSaturation"
-                        value={formData.keywordSaturation}
-                        onChange={handleChange}
-                      >
-                        <option className="bg-surface-container" value="High">High</option>
-                        <option className="bg-surface-container" value="Medium">Medium</option>
-                        <option className="bg-surface-container" value="Low">Low</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Top Video Velocity */}
-                  <div className="space-y-2">
-                    <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Top Video Velocity</label>
-                    <div className="bg-white/[0.02] backdrop-blur-[10px] border border-white/5 relative corner-accent">
-                      <input 
-                        className="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0" 
-                        name="topVideoVelocity" 
-                        placeholder="vph" 
-                        type="number"
-                        value={formData.topVideoVelocity}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Competitor Thumbnails */}
-                  <div className="space-y-2">
-                    <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Competitor Thumbnails</label>
-                    <div className="bg-white/[0.02] backdrop-blur-[10px] border border-white/5 relative corner-accent">
-                      <input 
-                        className="w-full bg-transparent border-none text-on-surface p-3 text-sm focus:ring-0" 
-                        name="competitorThumbnails" 
-                        placeholder="url1, url2..." 
-                        type="text"
-                        value={formData.competitorThumbnails}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Competitor Comments */}
-                <div className="space-y-2">
-                  <label className="block font-headline text-[9px] font-bold uppercase tracking-[0.15em] text-on-surface/40 ml-1">Competitor Comments</label>
-                  <div className="bg-white/[0.02] backdrop-blur-[10px] border border-white/5 relative corner-accent">
-                    <textarea 
-                      className="w-full bg-transparent border-none text-on-surface p-4 text-xs placeholder:text-on-surface/10 focus:ring-0 transition-all resize-none font-body tracking-wide" 
-                      name="competitorComments" 
-                      placeholder="Paste top comment insights..." 
-                      rows="3"
-                      value={formData.competitorComments}
-                      onChange={handleChange}
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-
               {/* Submit Action */}
-              <div className="flex flex-col items-center pt-8 border-t border-white/5">
+              <div className="flex flex-col items-center pt-8 border-t border-white/5 mt-10">
                 <div className="mb-4 text-center">
                   <p className="font-mono text-[8px] text-on-surface/30 uppercase tracking-[0.2em] mb-2">Request Payload Preparation</p>
                   <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
                     <span className="text-[9px] font-mono text-spectre-red">{'{'}</span>
-                    <span className="text-[9px] font-mono text-on-surface/60">request, signals, competitors</span>
+                    <span className="text-[9px] font-mono text-on-surface/60">video_idea</span>
                     <span className="text-[9px] font-mono text-spectre-red">{'}'}</span>
                   </div>
                 </div>

@@ -2,4 +2,4 @@ google-api-python-client
 youtube-transcript-api
 python-dotenv
 requests
-yt-dlp
+yt-dlp==2026.03.17

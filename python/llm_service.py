@@ -1,17 +1,18 @@
 import json
 import os
+import re
+import time
 import concurrent.futures
 from typing import Any, List, TypeVar
 
 import google.generativeai as genai
 from pydantic import BaseModel, ValidationError
 
-from creator_profile import DerivedCreatorProfile
 # Legacy — no longer used
 # from models import AnalystReport, CreativeStrategy, VideoData
 
 _MODEL_NAME = "gemini-2.5-flash"
-_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
 # -------------------------------
 # QUERY EXPANSION
@@ -108,12 +109,54 @@ def generate_content_with_timeout(
     generation_config: Any,
     timeout_s: float,
 ):
-    future = _EXECUTOR.submit(
-        model.generate_content,
-        prompt,
-        generation_config=generation_config,
-    )
-    return future.result(timeout=timeout_s)
+    """
+    Calls model.generate_content with a timeout.
+    On 429 ResourceExhausted, reads the retry_delay from the error
+    message and waits exactly that long before retrying.
+    Retries up to 5 times before giving up and re-raising.
+    """
+    last_exception = None
+
+    for attempt in range(5):
+        try:
+            future = _EXECUTOR.submit(
+                model.generate_content,
+                prompt,
+                generation_config=generation_config,
+            )
+            return future.result(timeout=timeout_s)
+
+        except Exception as e:
+            last_exception = e
+            error_str = str(e)
+
+            is_rate_limit = (
+                "429" in error_str
+                or "ResourceExhausted" in error_str
+                or "RESOURCE_EXHAUSTED" in error_str
+            )
+
+            if not is_rate_limit:
+                # Not a quota error — re-raise immediately
+                raise
+
+            # Try to extract the exact retry delay Google specifies
+            wait_seconds = 60  # safe default
+            try:
+                match = re.search(r'seconds:\s*(\d+)', error_str)
+                if match:
+                    wait_seconds = int(match.group(1)) + 5
+            except Exception:
+                pass
+
+            print(
+                f"[llm] 429 rate limited on attempt {attempt + 1}/5 — "
+                f"waiting {wait_seconds}s before retry..."
+            )
+            time.sleep(wait_seconds)
+
+    # All 5 attempts exhausted
+    raise last_exception
 
 
 def expand_idea_to_queries(idea: str) -> List[str]:

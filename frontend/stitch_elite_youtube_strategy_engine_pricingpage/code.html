@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#ffb4a8",
+              "tertiary-container": "#e16f5e",
+              "surface-container-highest": "#353534",
+              "on-tertiary-fixed": "#410000",
+              "tertiary-fixed-dim": "#ffb4a8",
+              "surface-dim": "#131313",
+              "outline-variant": "#603e39",
+              "inverse-primary": "#c00100",
+              "error-container": "#93000a",
+              "on-tertiary": "#621109",
+              "secondary-fixed": "#ffdad4",
+              "surface-tint": "#ffb4a8",
+              "primary-fixed-dim": "#ffb4a8",
+              "inverse-on-surface": "#313030",
+              "tertiary-fixed": "#ffdad4",
+              "on-primary-fixed": "#410000",
+              "surface-container-low": "#1c1b1b",
+              "on-primary-fixed-variant": "#930100",
+              "on-background": "#e5e2e1",
+              "on-tertiary-fixed-variant": "#81281d",
+              "on-primary": "#690100",
+              "secondary-fixed-dim": "#ffb4a8",
+              "on-tertiary-container": "#580904",
+              "on-secondary-container": "#ff9f90",
+              "surface-variant": "#353534",
+              "secondary-container": "#970100",
+              "primary-container": "#ff5540",
+              "background": "#131313",
+              "on-surface": "#e5e2e1",
+              "surface-container-high": "#2a2a2a",
+              "inverse-surface": "#e5e2e1",
+              "surface": "#131313",
+              "primary": "#ffb4a8",
+              "primary-fixed": "#ffdad4",
+              "outline": "#b18780",
+              "on-surface-variant": "#ebbbb4",
+              "surface-container": "#201f1f",
+              "surface-bright": "#3a3939",
+              "surface-container-lowest": "#0e0e0e",
+              "on-secondary-fixed-variant": "#930100",
+              "secondary": "#ffb4a8",
+              "error": "#ffb4ab",
+              "on-secondary-fixed": "#410000",
+              "on-secondary": "#690100",
+              "on-error-container": "#ffdad6",
+              "on-primary-container": "#5c0000",
+              "on-error": "#690005"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #0A0A0A;
+        color: #E5E2E1;
+        font-family: 'Inter', sans-serif;
+      }
+      .pricing-card-glow {
+        box-shadow: 0 0 40px rgba(255, 0, 0, 0.15);
+      }
+      .ghost-border {
+        border: 1px solid rgba(96, 62, 57, 0.15);
+      }
+    </style>
+<style>
+@keyframes shiny-sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+.group-hover\:animate-\[shiny-sweep_0\.7s_ease-in-out\] {
+  animation: shiny-sweep 0.7s ease-in-out;
+}
+</style><style>
+@keyframes text-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-text-flow {
+  background: linear-gradient(to right, #e5e2e1 20%, #71717a 40%, #e5e2e1 60%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-flow 8s linear infinite;
+}
+</style></head>
+<body class="selection:bg-secondary-container selection:text-on-background">
+<!-- TopNavBar Execution -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313]/40 backdrop-blur-xl border-b border-[#603E39]/15 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-bold tracking-tighter text-[#E5E2E1] font-['Space_Grotesk']">
+            STRAT_ENGN
+        </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-['Space_Grotesk'] tracking-tight uppercase text-xs font-bold text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" href="#">INTEL</a>
+<a class="font-['Space_Grotesk'] tracking-tight uppercase text-xs font-bold text-[#FF0000] border-b border-[#FF0000] pb-1" href="#">PRICING</a>
+<a class="font-['Space_Grotesk'] tracking-tight uppercase text-xs font-bold text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" href="#">RESOURCES</a>
+<a class="font-['Space_Grotesk'] tracking-tight uppercase text-xs font-bold text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors" href="#">LOGIN</a>
+</div>
+<button class="bg-secondary-container text-on-background px-5 py-2 rounded-sm font-['Space_Grotesk'] tracking-tight uppercase text-xs font-bold hover:bg-[#3A3939]/20 transition-all duration-300 active:scale-95">
+            GET_STARTED
+        </button>
+</div>
+</nav>
+<main class="pt-32 pb-20 px-6">
+<!-- Hero Section -->
+<header class="max-w-4xl mx-auto text-center mb-16">
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tighter mb-8 animate-text-flow">
+            Stop guessing. Start growing.
+        </h1>
+<!-- Pricing Toggle -->
+<div class="flex items-center justify-center gap-4 mb-12">
+<span class="text-xs font-label uppercase tracking-widest text-on-surface/40">Monthly</span>
+<div class="w-12 h-6 bg-surface-container rounded-full p-1 flex items-center cursor-pointer ghost-border">
+<div class="w-4 h-4 bg-primary rounded-full translate-x-6 transition-transform"></div>
+</div>
+<span class="text-xs font-label uppercase tracking-widest text-on-surface">Yearly <span class="text-[#FF0000] font-bold">-20%</span></span>
+</div>
+</header>
+<!-- Pricing Cards Grid -->
+<div class="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 items-stretch">
+<!-- Left Card: Starter -->
+<div class="bg-slate-900 p-8 md:p-10 rounded-sm flex flex-col h-full border-none">
+<div class="mb-10">
+<h2 class="font-headline text-2xl font-bold uppercase tracking-tight text-on-surface mb-2">Starter</h2>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-headline font-bold text-on-surface">$0</span>
+<span class="text-on-surface/40 font-label text-sm">/mo</span>
+</div>
+</div>
+<ul class="space-y-6 mb-12 flex-grow">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">Basic Performance Tracking</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">Monthly Strategy Brief</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">Standard Data Export</span>
+</li>
+</ul>
+<button class="w-full py-4 px-6 border border-on-surface/20 rounded-sm font-headline font-bold text-xs uppercase tracking-widest hover:bg-on-surface/5 transition-colors">
+                Get Started Free
+            </button>
+</div>
+<!-- Middle Card: Creator Pro -->
+<div class="bg-surface-container p-8 md:p-10 rounded-sm flex flex-col h-full ghost-border pricing-card-glow relative overflow-hidden">
+<!-- Highlight Badge -->
+<div class="absolute top-0 right-0 bg-secondary-container px-4 py-1">
+<span class="text-[10px] font-black tracking-widest uppercase text-on-background">Most Popular</span>
+</div>
+<div class="mb-10">
+<h2 class="font-headline text-2xl font-bold uppercase tracking-tight text-on-surface mb-2">Creator Pro</h2>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-headline font-bold text-on-surface">$29</span>
+<span class="text-on-surface/40 font-label text-sm">/mo</span>
+</div>
+</div>
+<ul class="space-y-6 mb-12 flex-grow">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface font-body font-medium">Personalized AI Analyst</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">Real-time Competitor Intel</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">Unlimited Keyword Clusters</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">Priority Processing Node</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-on-surface/80 font-body">24/7 Tactical Support</span>
+</li>
+</ul>
+<button class="w-full py-4 px-6 bg-[#FF0000] text-white rounded-sm font-headline font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,0,0,0.3)] hover:shadow-[0_0_30px_rgba(255,0,0,0.5)]">
+                Upgrade to Pro
+            </button>
+</div>
+<!-- Right Card: Ultimate -->
+<div class="group bg-gradient-to-br from-[#8B0000] to-[#2a0000] hover:to-[#000000] p-8 md:p-10 rounded-sm flex flex-col h-full relative overflow-hidden shadow-[0_0_50px_rgba(139,0,0,0.3)] transition-colors duration-500">
+<!-- Highlight Badge -->
+<div class="absolute top-0 right-0 bg-white px-4 py-1">
+<span class="text-[10px] font-black tracking-widest uppercase text-black">Most Aggressive</span>
+</div>
+<div class="mb-10">
+<h2 class="font-headline text-2xl font-bold uppercase tracking-tight text-white mb-2">Ultimate</h2>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-headline font-bold text-white">$99</span>
+<span class="text-white/60 font-label text-sm">/mo</span>
+</div>
+</div>
+<ul class="space-y-4 mb-12 flex-grow">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Custom Neural Strategy Engine</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Infinite Competitive Surveillance</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Autonomous Content Deployment</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Whitelabel Reporting Suite</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Dedicated Growth Architect</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Full API Direct Access</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#FF0000] text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm text-white font-body font-bold">Black-Ops Market Intel</span>
+</li>
+</ul>
+<button class="w-full py-4 px-6 bg-white text-black rounded-sm font-headline font-bold text-xs uppercase tracking-widest hover:bg-white/90 transition-all active:scale-95 shadow-xl relative overflow-hidden group hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"><span class="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shiny-sweep_0.7s_ease-in-out]"></span>
+                Go Ultimate
+            </button>
+</div>
+</div>
+<!-- Trust Section -->
+<!-- Briefing: Minimalist Technical FAQ -->
+<section class="mt-32 py-32 bg-surface-container-lowest border-y border-outline-variant/10">
+<div class="max-w-4xl mx-auto px-8">
+<div class="flex items-center gap-4 mb-16">
+<div class="h-px flex-1 bg-outline-variant/20"></div>
+<h2 class="font-headline text-2xl font-black tracking-widest uppercase">BRIEFING_DOCS</h2>
+<div class="h-px flex-1 bg-outline-variant/20"></div>
+</div>
+<div class="space-y-12">
+<div class="group cursor-help">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline text-lg font-bold group-hover:text-primary transition-colors tracking-tight">How does the Viral Delta Algorithm work?</h3>
+<span class="material-symbols-outlined text-primary/40 group-hover:rotate-45 transition-transform">add</span>
+</div>
+<p class="text-on-surface/40 text-sm leading-relaxed border-l-2 border-primary/10 pl-6 hidden group-hover:block">The delta is calculated by cross-referencing real-time retention data against 100+ global metadata variables including search velocity, thumbnail contrast ratios, and psychological framing patterns.</p>
+</div>
+<div class="group cursor-help">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline text-lg font-bold group-hover:text-primary transition-colors tracking-tight">Is this tool compatible with all niches?</h3>
+<span class="material-symbols-outlined text-primary/40 group-hover:rotate-45 transition-transform">add</span>
+</div>
+<p class="text-on-surface/40 text-sm leading-relaxed border-l-2 border-primary/10 pl-6 hidden group-hover:block">Yes. Our neural networks are trained on multi-lingual datasets across 42 high-level categories, ensuring precision accuracy regardless of your content vertical.</p>
+</div>
+<div class="group cursor-help">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline text-lg font-bold group-hover:text-primary transition-colors tracking-tight">What is the onboarding protocol?</h3>
+<span class="material-symbols-outlined text-primary/40 group-hover:rotate-45 transition-transform">add</span>
+</div>
+<p class="text-on-surface/40 text-sm leading-relaxed border-l-2 border-primary/10 pl-6 hidden group-hover:block">Upon early access approval, users undergo a 15-minute integration phase where our engine analyzes your channel's historical DNA to build a custom tactical baseline.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Execution -->
+<footer class="w-full border-t border-[#603E39]/15 bg-[#0E0E0E] mt-20">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 py-10 gap-6 max-w-7xl mx-auto">
+<div class="text-lg font-black text-[#E5E2E1] font-['Space_Grotesk']">
+            STRAT_ENGN
+        </div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="font-['Inter'] uppercase text-[10px] tracking-[0.1em] text-[#E5E2E1]/40 hover:text-[#FF0000] transition-colors" href="#">TERMINAL</a>
+<a class="font-['Inter'] uppercase text-[10px] tracking-[0.1em] text-[#E5E2E1]/40 hover:text-[#FF0000] transition-colors" href="#">PRIVACY</a>
+<a class="font-['Inter'] uppercase text-[10px] tracking-[0.1em] text-[#E5E2E1]/40 hover:text-[#FF0000] transition-colors" href="#">API_DOCS</a>
+<a class="font-['Inter'] uppercase text-[10px] tracking-[0.1em] text-[#E5E2E1]/40 hover:text-[#FF0000] transition-colors" href="#">SYSTEM_STATUS</a>
+</div>
+<div class="font-['Inter'] uppercase text-[10px] tracking-[0.1em] text-[#E5E2E1]/40 text-center md:text-right">
+            ©2024 STRAT_ENGN TACTICAL SYSTEMS. ALL RIGHTS RESERVED.
+        </div>
+</div>
+</footer>
+</body></html>

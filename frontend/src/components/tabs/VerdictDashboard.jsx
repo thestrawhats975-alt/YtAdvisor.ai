@@ -6,13 +6,15 @@ const VerdictDashboard = () => {
   
   if (!apiPayload) return null; // Defensive check, but strictly handled by layout
 
-  const analyst = apiPayload.analyst || {};
-  const optimizer = apiPayload.optimizer || {};
+  const verdict = apiPayload.verdict || {};
+  const market = apiPayload.market || {};
 
-  // Extract strictly dynamic strings
-  const marketTruth = analyst.market_truth;
-  const metrics = optimizer.performance_outlook;
-  const channelLeverage = analyst.channel_leverage;
+  const marketTruth = market.market_truth;
+  const ideaUpgrade = verdict.idea_upgrade;
+  const benchmark = verdict.performance_benchmark;
+  const outlook = verdict.performance_outlook;
+  const channelStrength = verdict.channel_strength;
+  const channelRisk = verdict.channel_risk;
 
   return (
     <div className="p-8 max-w-7xl mx-auto grid grid-cols-12 gap-8 w-full mt-4">
@@ -26,8 +28,8 @@ const VerdictDashboard = () => {
       {/* Content Grid */}
       <div className="col-span-11 space-y-12 pb-16">
         
-        {/* Idea Upgrade Section -> Maps to Market Truth conditionally */}
-        {marketTruth && (
+        {/* Mission Reframe -> Idea Upgrade + Market Context */}
+        {(ideaUpgrade || marketTruth) && (
           <section className="space-y-6">
             <div className="flex items-center gap-4">
               <span className="material-symbols-outlined text-[#FF0000]" style={{fontVariationSettings: "'FILL' 1"}}>bolt</span>
@@ -38,21 +40,23 @@ const VerdictDashboard = () => {
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF0000]/5 rounded-full -mr-20 -mt-20 blur-3xl transition-all group-hover:bg-[#FF0000]/10"></div>
               <div className="relative z-10 space-y-4">
                 <span className="text-[#FF0000] text-[0.6875rem] font-black tracking-[0.2em] uppercase font-headline">IDEA UPGRADE</span>
-                <h3 className="text-4xl md:text-5xl font-black font-headline text-[#E5E2E1] leading-tight max-w-4xl uppercase">REFRAME FOR MARKET VIABILITY.</h3>
+                <h3 className="text-2xl md:text-3xl font-black font-headline text-[#E5E2E1] leading-tight max-w-4xl uppercase">{ideaUpgrade || 'REFRAME FOR MARKET VIABILITY.'}</h3>
                 
-                <div className="pt-4 max-w-2xl">
-                  <p className="text-[#E5E2E1]/50 leading-relaxed">
-                    <span className="text-[#E5E2E1] font-bold mr-2">MARKET CONTEXT:</span> 
-                    {marketTruth}
-                  </p>
-                </div>
+                {marketTruth && (
+                  <div className="pt-4 max-w-2xl">
+                    <p className="text-[#E5E2E1]/50 leading-relaxed">
+                      <span className="text-[#E5E2E1] font-bold mr-2">MARKET CONTEXT:</span> 
+                      {marketTruth}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </section>
         )}
 
         {/* Cards Row -> Maps to Performance Outlook conditionally */}
-        {metrics && (
+        {(benchmark || outlook) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-[#1C1B1B] p-8 rounded-sm border-l-2 border-[#FF0000] flex flex-col justify-between h-56">
               <div className="space-y-1">
@@ -60,7 +64,7 @@ const VerdictDashboard = () => {
                 <h4 className="text-[0.6875rem] font-bold text-[#FF0000] tracking-widest uppercase font-mono">PERFORMANCE BENCHMARK</h4>
               </div>
               <div className="space-y-4">
-                <p className="text-xl font-bold text-[#E5E2E1] leading-snug">{metrics.split('|')[0]}</p>
+                <p className="text-lg font-bold text-[#E5E2E1] leading-snug">{benchmark}</p>
                 <p className="text-xs font-mono text-[#E5E2E1]/40 uppercase tracking-tight">System calculated trajectory based on current input parameters.</p>
               </div>
             </div>
@@ -73,42 +77,39 @@ const VerdictDashboard = () => {
                 </div>
               </div>
               <p className="text-lg font-bold text-[#E5E2E1] leading-snug">
-                  {metrics.substring(metrics.indexOf('|') + 1).replace('|', '- ')}
+                  {outlook}
               </p>
             </div>
           </div>
         )}
 
-        {/* Channel Leverage Section -> Maps conditionally */}
-        {channelLeverage && (
+        {/* Channel Intel */}
+        {(channelStrength || channelRisk) && (
           <section className="space-y-6">
             <div className="flex items-center gap-4">
               <span className="material-symbols-outlined text-[#FF0000]" style={{fontVariationSettings: "'FILL' 1"}}>shield_with_heart</span>
-              <h2 className="font-headline font-black text-xl tracking-tight uppercase">CHANNEL LEVERAGE</h2>
+              <h2 className="font-headline font-black text-xl tracking-tight uppercase">CHANNEL INTEL</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1C1B1B] rounded-sm overflow-hidden border border-[#1C1B1B]">
-              <div className="bg-[#0A0A0A] p-8 space-y-4 border-l-4 border-[#00FF41]">
-                <div className="flex items-center gap-2 text-[#00FF41]">
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  <span className="text-[0.6875rem] font-black tracking-widest uppercase font-mono">STRENGTH</span>
+              {channelStrength && (
+                <div className="bg-[#0A0A0A] p-8 space-y-4 border-l-4 border-[#00FF41]">
+                  <div className="flex items-center gap-2 text-[#00FF41]">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    <span className="text-[0.6875rem] font-black tracking-widest uppercase font-mono">STRENGTH</span>
+                  </div>
+                  <p className="text-lg font-bold text-[#E5E2E1] leading-snug">{channelStrength}</p>
                 </div>
-                <p className="text-lg font-bold text-[#E5E2E1] leading-snug">
-                  {channelLeverage}
-                </p>
-                <p className="text-xs text-[#E5E2E1]/40 font-mono uppercase">Unfair advantage identified.</p>
-              </div>
-              
-              <div className="bg-[#0A0A0A] p-8 space-y-4 border-l-4 border-amber-500 relative">
-                <div className="flex items-center gap-2 text-amber-500">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  <span className="text-[0.6875rem] font-black tracking-widest uppercase font-mono">RISK</span>
+              )}
+              {channelRisk && (
+                <div className="bg-[#0A0A0A] p-8 space-y-4 border-l-4 border-amber-500">
+                  <div className="flex items-center gap-2 text-amber-500">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    <span className="text-[0.6875rem] font-black tracking-widest uppercase font-mono">RISK</span>
+                  </div>
+                  <p className="text-lg font-bold text-[#E5E2E1] leading-snug">{channelRisk}</p>
                 </div>
-                <p className="text-lg font-bold text-[#E5E2E1] leading-snug">
-                  Over-technical jargon might limit initial hook potential.
-                </p>
-                <p className="text-xs text-[#E5E2E1]/40 font-mono uppercase">Recommendation: High tempo visual editing.</p>
-              </div>
+              )}
             </div>
           </section>
         )}

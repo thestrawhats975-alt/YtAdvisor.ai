@@ -5,17 +5,18 @@ const ExecutionDashboard = () => {
   const { apiPayload } = useOutletContext();
   if (!apiPayload) return null;
 
-  const strategist = apiPayload.strategist || {};
-  const optimizer = apiPayload.optimizer || {};
+  const execution = apiPayload.execution || {};
 
-  const exactHookScript = strategist.exact_hook_script;
-  const pacingGuide = optimizer.pacing_guide || '';
-  const pacingList = pacingGuide.split(/[\.\!\?]\s+/).filter(Boolean);
+  const exactHookScript = execution.exact_hook_script;
+  const pacingList = Array.isArray(execution.pacing_timeline) 
+    ? execution.pacing_timeline 
+    : [];
   
-  const qualityUpgrades = optimizer.quality_upgrades || '';
-  const upgradesList = qualityUpgrades.split(/[\.\!\?]\s+/).filter(Boolean);
+  const retentionTraps = Array.isArray(execution.retention_traps) ? execution.retention_traps : [];
+  const winConditions = Array.isArray(execution.win_conditions) ? execution.win_conditions : [];
+  const failConditions = Array.isArray(execution.fail_conditions) ? execution.fail_conditions : [];
 
-  const shortsRecommended = optimizer.shorts_test_recommended === true;
+  const shortsRecommended = execution.shorts_test_recommended === true;
 
   // Mock timestamps for the dynamic timeline rendering
   const getTimelineStamp = (index, total) => {
@@ -92,7 +93,7 @@ const ExecutionDashboard = () => {
                 <div className="absolute left-[3.5rem] w-2 h-2 rounded-full bg-[#970100] border-4 border-[#0a0a0a] z-10 transition-transform group-hover:scale-150"></div>
                 <div className="flex-1 pl-12 flex justify-between items-center bg-[#1c1b1b]/50 hover:bg-[#1c1b1b] p-4 transition-colors border border-transparent hover:border-[#603e39]/30 rounded-sm cursor-default">
                   <span className="text-[#E5E2E1] font-headline font-bold text-sm md:text-base tracking-tight leading-relaxed line-clamp-2 md:line-clamp-none">
-                    {step.endsWith('.') ? step : step + '.'}
+                    {step}
                   </span>
                   <span className="hidden md:inline-block ml-4 text-[#E5E2E1]/40 text-[10px] font-mono uppercase tracking-widest shrink-0">
                     Phase 0{index + 1}
@@ -104,26 +105,26 @@ const ExecutionDashboard = () => {
         </section>
       )}
 
-      {/* QUALITY UPGRADES (Replaces Retention Traps Design) */}
-      {upgradesList.length > 0 && (
+      {/* RETENTION TRAPS */}
+      {retentionTraps.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-[#E5E2E1]">published_with_changes</span>
-            <h2 className="text-lg font-headline font-bold text-[#FFFFFF] tracking-tight uppercase">Quality Standards</h2>
+            <span className="material-symbols-outlined text-[#E5E2E1]">warning</span>
+            <h2 className="text-lg font-headline font-bold text-[#FFFFFF] tracking-tight uppercase">Retention Traps & Fixes</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {upgradesList.map((upgrade, index) => (
+            {retentionTraps.map((trap, index) => (
               <div key={index} className="bg-[#1c1b1b] p-6 border border-[#E5E2E1]/10 space-y-4 hover:border-[#970100]/50 transition-colors">
                 <div className="flex items-center gap-2 text-[#FFA000]">
-                  <span className="material-symbols-outlined text-xl">build_circle</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#E5E2E1]/60">Optimization</span>
+                  <span className="material-symbols-outlined text-xl">warning</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#E5E2E1]/60">Risk at: {trap.moment}</span>
                 </div>
-                <h3 className="text-[#E5E2E1] font-headline font-bold text-lg leading-tight line-clamp-3">
-                  {upgrade.endsWith('.') ? upgrade : upgrade + '.'}
+                <h3 className="text-[#E5E2E1] font-headline font-bold text-sm leading-tight">
+                  <span className="text-[#FF0000]">Risk:</span> {trap.reason}
                 </h3>
-                <div className="pt-4 flex items-center gap-2 text-[#4CAF50] border-t border-white/5">
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Enforce During Edits</span>
+                <div className="pt-4 flex items-start gap-2 text-[#4CAF50] border-t border-white/5">
+                  <span className="material-symbols-outlined text-sm mt-0.5">build_circle</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Fix: {trap.fix}</span>
                 </div>
               </div>
             ))}
@@ -131,50 +132,42 @@ const ExecutionDashboard = () => {
         </section>
       )}
 
-      {/* THE RULES (Static design layout kept for standard rules logic) */}
+      {/* THE RULES */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Win Conditions */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-[#4CAF50]">
-            <span className="material-symbols-outlined">verified</span>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.2em]">Win Conditions</h2>
+        {(winConditions.length > 0) && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[#4CAF50]">
+              <span className="material-symbols-outlined">verified</span>
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em]">Win Conditions</h2>
+            </div>
+            <ul className="space-y-3">
+              {winConditions.map((condition, idx) => (
+                <li key={idx} className="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
+                  <span className="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
+                  <span className="text-sm font-medium text-[#E5E2E1]">{condition}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="space-y-3">
-            <li className="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
-              <span className="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
-              <span className="text-sm font-medium text-[#E5E2E1]">Average view duration exceeding 65% of total length.</span>
-            </li>
-            <li className="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
-              <span className="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
-              <span className="text-sm font-medium text-[#E5E2E1]">Retention spike at the 12-second core value prop.</span>
-            </li>
-            <li className="flex items-start gap-4 p-4 bg-[#4CAF50]/5 border border-[#4CAF50]/10 rounded-sm">
-              <span className="material-symbols-outlined text-[#4CAF50] text-sm mt-0.5">check_circle</span>
-              <span className="text-sm font-medium text-[#E5E2E1]">Comment to View ratio above 1.5% in first hour.</span>
-            </li>
-          </ul>
-        </div>
+        )}
         {/* Fail Conditions */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-[#970100]">
-            <span className="material-symbols-outlined">cancel</span>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.2em]">Fail Conditions</h2>
+        {(failConditions.length > 0) && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[#970100]">
+              <span className="material-symbols-outlined">cancel</span>
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em]">Fail Conditions</h2>
+            </div>
+            <ul className="space-y-3">
+              {failConditions.map((condition, idx) => (
+                <li key={idx} className="flex items-start gap-4 p-4 bg-[#970100]/5 border border-[#970100]/10 rounded-sm">
+                  <span className="material-symbols-outlined text-[#970100] text-sm mt-0.5">close</span>
+                  <span className="text-sm font-medium text-[#E5E2E1]">{condition}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="space-y-3">
-            <li className="flex items-start gap-4 p-4 bg-[#970100]/5 border border-[#970100]/10 rounded-sm">
-              <span className="material-symbols-outlined text-[#970100] text-sm mt-0.5">close</span>
-              <span className="text-sm font-medium text-[#E5E2E1]">Hook drop-off &gt; 40% before the 5-second mark.</span>
-            </li>
-            <li className="flex items-start gap-4 p-4 bg-[#970100]/5 border border-[#970100]/10 rounded-sm">
-              <span className="material-symbols-outlined text-[#970100] text-sm mt-0.5">close</span>
-              <span className="text-sm font-medium text-[#E5E2E1]">Zero 'Rewatch' events during technical demonstration.</span>
-            </li>
-            <li className="flex items-start gap-4 p-4 bg-[#970100]/5 border border-[#970100]/10 rounded-sm">
-              <span className="material-symbols-outlined text-[#970100] text-sm mt-0.5">close</span>
-              <span className="text-sm font-medium text-[#E5E2E1]">High 'Skip' interaction during intro typography.</span>
-            </li>
-          </ul>
-        </div>
+        )}
       </section>
 
       {/* SHORTS TEST BOUNDARY (Dynamic) */}

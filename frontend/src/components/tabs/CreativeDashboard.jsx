@@ -6,12 +6,11 @@ const CreativeDashboard = () => {
   
   if (!apiPayload) return null;
 
-  const strategist = apiPayload.strategist || {};
+  const creative = apiPayload.creative || {};
 
-  // Extract strictly dynamic fields from the backend JSON object mapped to "strategist"
-  const exactHookScript = strategist.exact_hook_script;
-  const titlePsychology = strategist.title_psychology;
-  const thumbnailPrompt = strategist.thumbnail_contrast_prompt;
+  const exactHookScript = apiPayload.execution?.exact_hook_script;
+  const titlePsychology = creative.title_psychology;
+  const thumbnailPrompt = creative.thumbnail_contrast_rule || creative.thumbnail_concept;
 
   return (
     <div className="p-10 max-w-7xl mx-auto w-full space-y-12 pb-24 relative">

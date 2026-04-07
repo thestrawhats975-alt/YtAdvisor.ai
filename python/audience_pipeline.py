@@ -27,6 +27,9 @@ from creator_dna_service import (
     snapshot_to_creator_dna_string,
 )
 
+# Tracks live worker threads by channel_id
+_running_channels: Dict[str, bool] = {}
+
 
 class PipelinePhase(str, Enum):
     BOOTSTRAPPING = "BOOTSTRAPPING"
@@ -57,6 +60,7 @@ class PipelineState:
     channel_title: str
     youtube_api_key: str
     phase: PipelinePhase = PipelinePhase.BOOTSTRAPPING
+    is_reliable: bool = False
 
     # Progress tracking
     total_videos_on_channel: int = 0
@@ -105,6 +109,7 @@ def _load_state(channel_id: str) -> Optional[PipelineState]:
             channel_title=data.get("channel_title", ""),
             youtube_api_key=data.get("youtube_api_key", ""),
             phase=PipelinePhase(data.get("phase", PipelinePhase.BOOTSTRAPPING.value)),
+            is_reliable=bool(data.get("is_reliable", False)),
             total_videos_on_channel=int(data.get("total_videos_on_channel", 0) or 0),
             videos_processed=int(data.get("videos_processed", 0) or 0),
             current_batch_index=int(data.get("current_batch_index", 0) or 0),
@@ -187,6 +192,7 @@ def _run_bootstrap(
         state.last_error = f"Bootstrap DNA creation failed: {dna_result.error_message}"
         return False
 
+    state.is_reliable = dna_result.updated_snapshot.is_reliable
     _save_dna(dna_result.updated_snapshot)
     state.videos_processed = len(bootstrap_videos)
     state.phase = PipelinePhase.ENRICHING
@@ -284,80 +290,174 @@ def _pipeline_worker(channel_id: str, youtube_api_key: str) -> None:
     print(f"[pipeline] worker started for channel {channel_id}")
 
     try:
-        state = _load_state(channel_id)
-        if state is None:
-            print(f"[pipeline] ERROR: no state found for {channel_id} — worker exiting")
-            return
+        try:
+            # Entire worker body runs inside this try/finally
+            state = _load_state(channel_id)
+            if state is None:
+                print(f"[pipeline] ERROR: no state found for {channel_id} — worker exiting")
+                return
 
-        state.is_running = True
+            state.is_running = True
 
-        print(f"[pipeline] fetching channel video metadata...")
-        scrape_result = scrape_channel(
-            channel_input=channel_id,
-            youtube_api_key=youtube_api_key,
-            max_videos=MAX_VIDEOS_CAP,
-        )
+            print(f"[pipeline] fetching channel video metadata...")
+            scrape_result = scrape_channel(
+                channel_input=channel_id,
+                youtube_api_key=youtube_api_key,
+                max_videos=MAX_VIDEOS_CAP,
+            )
 
-        if not scrape_result.scrape_successful:
-            state.phase = PipelinePhase.FAILED
-            state.last_error = f"Channel scrape failed: {scrape_result.error_message}"
+            if not scrape_result.scrape_successful:
+                state.phase = PipelinePhase.FAILED
+                state.last_error = f"Channel scrape failed: {scrape_result.error_message}"
+                _save_state(state)
+                print(f"[pipeline] channel scrape failed — worker exiting")
+                return
+
+            state.total_videos_on_channel = scrape_result.total_video_count
             _save_state(state)
-            print(f"[pipeline] channel scrape failed — worker exiting")
-            return
 
-        state.total_videos_on_channel = scrape_result.total_video_count
+            if state.phase == PipelinePhase.BOOTSTRAPPING:
+                success = _run_bootstrap(state, scrape_result)
+                state.last_run_timestamp = time.time()
+                if not success:
+                    state.consecutive_failures += 1
+                    if state.consecutive_failures >= 3:
+                        state.phase = PipelinePhase.FAILED
+                        print(f"[pipeline] bootstrap failed 3 times — marking FAILED")
+                else:
+                    state.consecutive_failures = 0
+                _save_state(state)
+
+            while state.phase == PipelinePhase.ENRICHING:
+                now = time.time()
+                if state.last_run_timestamp > 0:
+                    elapsed_hours = (now - state.last_run_timestamp) / 3600
+                    if elapsed_hours < ENRICHMENT_INTERVAL_HOURS:
+                        wait_seconds = (ENRICHMENT_INTERVAL_HOURS - elapsed_hours) * 3600
+                        print(
+                            f"[pipeline] next enrichment batch in "
+                            f"{wait_seconds/3600:.1f}h — sleeping..."
+                        )
+                        time.sleep(min(wait_seconds, 3600))
+                        continue
+
+                success = _run_enrichment_batch(state, scrape_result)
+                state.last_run_timestamp = time.time()
+                state.next_run_timestamp = time.time() + (ENRICHMENT_INTERVAL_HOURS * 3600)
+
+                if not success:
+                    state.consecutive_failures += 1
+                    if state.consecutive_failures >= 3:
+                        state.phase = PipelinePhase.FAILED
+                        print(f"[pipeline] enrichment failed 3 times — marking FAILED")
+                        break
+                else:
+                    state.consecutive_failures = 0
+
+                _save_state(state)
+
+            print(f"[pipeline] worker finished — final phase: {state.phase}")
+
+        except Exception:
+            traceback.print_exc()
+            print(f"[pipeline] worker crashed for {channel_id}")
+        finally:
+            state_on_exit = _load_state(channel_id)
+            if state_on_exit:
+                state_on_exit.is_running = False
+                _save_state(state_on_exit)
+            _running_channels[channel_id] = False
+    except Exception:
+        # Guardrail: never raise from worker
+        traceback.print_exc()
+
+
+def start_pipeline(channel_input: str, youtube_api_key: str) -> PipelineState:
+    """
+    Creates or resumes a pipeline for the given channel.
+    If a pipeline is already running for this channel, returns current state without starting a new thread.
+    If state exists on disk but is not running, resumes from saved state.
+    If no state exists, initialises fresh state and starts the worker thread.
+    Returns the current PipelineState (never raises).
+    """
+    try:
+        raw = (channel_input or "").strip()
+        is_bare_channel_id = raw.startswith("UC") and " " not in raw
+
+        channel_id = raw
+        channel_title = ""
+        if not is_bare_channel_id:
+            sr = scrape_channel(raw, youtube_api_key, max_videos=1)
+            if sr.scrape_successful and sr.channel_id:
+                channel_id = sr.channel_id
+                channel_title = sr.channel_title
+
+        state = _load_state(channel_id)
+        if state is not None and state.phase in (PipelinePhase.COMPLETE, PipelinePhase.FAILED):
+            state.phase = PipelinePhase.BOOTSTRAPPING
+            state.current_batch_index = 0
+            state.videos_processed = 0
+            _save_state(state)
+
+        if state is None:
+            if not channel_title:
+                channel_title = channel_id
+            state = PipelineState(
+                channel_id=channel_id,
+                channel_title=channel_title,
+                youtube_api_key=youtube_api_key,
+                phase=PipelinePhase.BOOTSTRAPPING,
+            )
+            _save_state(state)
+        else:
+            # Ensure we keep the latest API key for background runs
+            state.youtube_api_key = youtube_api_key
+            _save_state(state)
+
+        if _running_channels.get(channel_id) is True:
+            return state
+
+        _running_channels[channel_id] = True
         _save_state(state)
 
-        if state.phase == PipelinePhase.BOOTSTRAPPING:
-            success = _run_bootstrap(state, scrape_result)
-            state.last_run_timestamp = time.time()
-            if not success:
-                state.consecutive_failures += 1
-                if state.consecutive_failures >= 3:
-                    state.phase = PipelinePhase.FAILED
-                    print(f"[pipeline] bootstrap failed 3 times — marking FAILED")
-            else:
-                state.consecutive_failures = 0
-            _save_state(state)
-
-        while state.phase == PipelinePhase.ENRICHING:
-            now = time.time()
-            if state.last_run_timestamp > 0:
-                elapsed_hours = (now - state.last_run_timestamp) / 3600
-                if elapsed_hours < ENRICHMENT_INTERVAL_HOURS:
-                    wait_seconds = (ENRICHMENT_INTERVAL_HOURS - elapsed_hours) * 3600
-                    print(
-                        f"[pipeline] next enrichment batch in "
-                        f"{wait_seconds/3600:.1f}h — sleeping..."
-                    )
-                    time.sleep(min(wait_seconds, 3600))
-                    continue
-
-            success = _run_enrichment_batch(state, scrape_result)
-            state.last_run_timestamp = time.time()
-            state.next_run_timestamp = time.time() + (ENRICHMENT_INTERVAL_HOURS * 3600)
-
-            if not success:
-                state.consecutive_failures += 1
-                if state.consecutive_failures >= 3:
-                    state.phase = PipelinePhase.FAILED
-                    print(f"[pipeline] enrichment failed 3 times — marking FAILED")
-                    break
-            else:
-                state.consecutive_failures = 0
-
-            _save_state(state)
-
-        print(f"[pipeline] worker finished — final phase: {state.phase}")
-
+        thread = threading.Thread(
+            target=_pipeline_worker,
+            args=(channel_id, youtube_api_key),
+            daemon=True,
+            name=f"audience-pipeline-{channel_id}",
+        )
+        thread.start()
+        return state
     except Exception:
         traceback.print_exc()
-        print(f"[pipeline] worker crashed for {channel_id}")
-    finally:
-        state_on_exit = _load_state(channel_id)
-        if state_on_exit:
-            state_on_exit.is_running = False
-            _save_state(state_on_exit)
+        return PipelineState(
+            channel_id="",
+            channel_title="",
+            youtube_api_key=youtube_api_key,
+            phase=PipelinePhase.FAILED,
+            last_error="start_pipeline failed",
+        )
+
+
+def get_pipeline_status(channel_id: str) -> Optional[PipelineState]:
+    """
+    Loads and returns the persisted PipelineState for the given channel_id.
+    Returns None if no state file exists.
+    Does not start any threads.
+    """
+    return _load_state(channel_id)
+
+
+def get_pipeline_dna_string(channel_id: str) -> Optional[str]:
+    """
+    Loads the DNA snapshot for the given channel_id and returns
+    snapshot_to_creator_dna_string(snapshot).
+    Returns None if no snapshot exists.
+    """
+    snap = _load_dna(channel_id)
+    if snap is None:
+        return None
+    return snapshot_to_creator_dna_string(snap)
 
 
 def start_pipeline_for_channel(
@@ -402,41 +502,6 @@ def start_pipeline_for_channel(
     thread.start()
     print(f"[pipeline] background thread launched for {channel_id}")
     return True
-
-
-def get_pipeline_status(channel_id: str) -> Optional[dict]:
-    """
-    Returns the current pipeline status as a dict for API responses.
-    Returns None if no pipeline exists for this channel.
-    """
-    state = _load_state(channel_id)
-    if state is None:
-        return None
-
-    dna = _load_dna(channel_id)
-
-    return {
-        "channel_id": state.channel_id,
-        "channel_title": state.channel_title,
-        "phase": state.phase.value,
-        "is_running": state.is_running,
-        "videos_processed": state.videos_processed,
-        "total_videos_on_channel": state.total_videos_on_channel,
-        "progress_percent": round(
-            (state.videos_processed / max(state.total_videos_on_channel, 1)) * 100, 1
-        ),
-        "last_run": datetime.fromtimestamp(state.last_run_timestamp, tz=timezone.utc).isoformat()
-        if state.last_run_timestamp > 0
-        else None,
-        "next_run": datetime.fromtimestamp(state.next_run_timestamp, tz=timezone.utc).isoformat()
-        if state.next_run_timestamp > 0
-        else None,
-        "consecutive_failures": state.consecutive_failures,
-        "last_error": state.last_error,
-        "dna_available": dna is not None,
-        "dna_reliable": dna.is_reliable if dna else False,
-        "dna_comments_analysed": dna.total_comments_analysed if dna else 0,
-    }
 
 
 def get_creator_dna_for_channel(channel_id: str) -> Optional[str]:

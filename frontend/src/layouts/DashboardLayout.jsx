@@ -18,14 +18,15 @@ const DashboardLayout = () => {
     return <Navigate to="/analyze" replace />;
   }
 
-  // Pre-parse the core structures so all tabs reliably access them dynamically
-  const apiPayload = parsedData?.data || {};
-  const analyst = apiPayload.analyst || {};
-  const optimizer = apiPayload.optimizer || {};
+  // Spring Boot maps the Python output to tab-named keys directly
+  const apiPayload = parsedData || {};
 
-  // Metrics for the sidebar
-  const finalVerdict = optimizer.final_verdict || '';
-  const satisfactionRisk = analyst.satisfaction_risk; // Only render if this exists
+  // Sidebar values from the correct keys
+  const finalVerdict = apiPayload.verdict?.final_verdict || '';
+  const confidence = apiPayload.verdict?.confidence || '';
+  const confidenceReason = apiPayload.verdict?.confidence_reason || '';
+  const satisfactionRisk = apiPayload.market?.satisfaction_risk;
+  const smallCreatorVerdict = apiPayload.market?.small_creator_verdict || '';
 
   return (
     <div className="bg-[#0A0A0A] text-[#E5E2E1] font-body flex overflow-hidden h-screen selection:bg-primary/30">
@@ -56,11 +57,13 @@ const DashboardLayout = () => {
             <div className="space-y-1.5">
               <span className="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">CONFIDENCE</span>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#00FF41] animate-[pulse_2s_ease-in-out_infinite]"></span>
-                <span className="text-sm font-bold text-[#00FF41] tracking-widest uppercase">HIGH</span>
+                <span className={`w-2 h-2 rounded-full animate-[pulse_2s_ease-in-out_infinite] ${confidence.toUpperCase() === 'HIGH' ? 'bg-[#00FF41]' : 'bg-[#FF0000]'}`}></span>
+                <span className={`text-sm font-bold tracking-widest uppercase ${confidence.toUpperCase() === 'HIGH' ? 'text-[#00FF41]' : 'text-[#E5E2E1]'}`}>
+                  {confidence || 'PENDING'}
+                </span>
               </div>
-              <p className="text-[0.6875rem] font-mono text-[#E5E2E1]/40 leading-tight uppercase">
-                High historical alignment with this content archetype.
+              <p className="text-[0.6875rem] font-mono text-[#E5E2E1]/40 leading-tight">
+                {confidenceReason}
               </p>
             </div>
 
@@ -78,18 +81,20 @@ const DashboardLayout = () => {
               </div>
             )}
 
-            {/* Creator Verdict (Derived optionally) */}
+            {/* Creator Verdict */}
             <div className="space-y-1">
               <span className="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#E5E2E1]/40 font-headline">SMALL CREATOR VERDICT</span>
               <div>
-                <span className="inline-block px-2 py-0.5 bg-[#00FF41]/10 border border-[#00FF41]/30 text-[#00FF41] text-[0.6875rem] font-black uppercase tracking-widest rounded-sm">CAN WIN</span>
+                <span className={`inline-block px-2 py-0.5 border text-[0.6875rem] font-black uppercase tracking-widest rounded-sm ${smallCreatorVerdict === 'HARD' || smallCreatorVerdict === 'AVOID' ? 'bg-[#FF0000]/10 border-[#FF0000]/30 text-[#FF0000]' : 'bg-[#00FF41]/10 border-[#00FF41]/30 text-[#00FF41]'}`}>
+                  {smallCreatorVerdict || 'AWAITING DATA'}
+                </span>
               </div>
             </div>
           </div>
         </nav>
 
         {/* Bottom Alert (Conditional feature) */}
-        {optimizer.shorts_test_recommended && (
+        {apiPayload.execution?.shorts_test_recommended && (
           <div className="mt-auto pt-4 border-t border-[#1C1B1B]">
             <div className="bg-[#FF0000]/10 border border-[#FF0000]/20 p-3 rounded-sm flex items-start gap-3">
               <span className="material-symbols-outlined text-[#FF0000] text-lg animate-[pulse_2s_ease-in-out_infinite]" style={{fontVariationSettings: "'FILL' 1"}}>error</span>

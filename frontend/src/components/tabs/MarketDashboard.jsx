@@ -6,18 +6,22 @@ const MarketDashboard = () => {
   
   if (!apiPayload) return null;
 
-  const analyst = apiPayload.analyst || {};
+  const market = apiPayload.market || {};
 
-  // Extract strictly dynamic fields from the backend JSON array mapped to "analyst"
-  const marketTruth = analyst.market_truth;
-  const dominantForce = analyst.dominant_force;
-  const competitorWeakness = analyst.competitor_weakness; // Might not exist
-  const audienceCraving = analyst.audience_craving; // Might not exist
-  const rawContentGaps = analyst.content_gaps;
-  const contentGapsList = typeof rawContentGaps === 'string' ? rawContentGaps.split(/,\s*|\s+and\s+/).filter(Boolean) : [];
+  const marketTruth = market.market_truth;
+  const dominantForce = market.dominant_force;
+  const competitorWeakness = market.competitor_weakness;
+  const audienceCraving = market.audience_craving;
+  const rawContentGaps = market.content_gaps || [];
+  let contentGapsList = [];
+  if (Array.isArray(rawContentGaps)) {
+    contentGapsList = rawContentGaps.map(g => typeof g === 'string' ? g : g.gap || JSON.stringify(g)).filter(Boolean);
+  } else if (typeof rawContentGaps === 'string') {
+    contentGapsList = rawContentGaps.split(/,\s*|\s+and\s+/).filter(Boolean);
+  }
   
-  const contentArchetype = analyst.content_archetype; // e.g. "SEARCH_EVERGREEN"
-  const satisfactionRisk = analyst.satisfaction_risk;
+  const contentArchetype = market.content_archetype;
+  const satisfactionRisk = market.satisfaction_risk;
 
   return (
     <div className="pt-8 pb-16 px-10 max-w-7xl mx-auto flex gap-12 w-full">

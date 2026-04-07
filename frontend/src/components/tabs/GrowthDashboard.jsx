@@ -5,11 +5,11 @@ const GrowthDashboard = () => {
   const { apiPayload } = useOutletContext();
   if (!apiPayload) return null;
 
-  const optimizer = apiPayload.optimizer || {};
+  const growth = apiPayload.growth || {};
+  const verdict = apiPayload.verdict || {};
 
-  // Extract strictly dynamic properties
-  const postPublishStrategy = optimizer.post_publish_strategy;
-  const performanceOutlook = optimizer.performance_outlook;
+  const postPublishStrategy = growth.pinned_comment || growth.community_post_seed;
+  const performanceOutlook = verdict.performance_outlook || verdict.series_positioning || growth.series_positioning;
 
   return (
     <div className="w-full min-h-screen pb-20 scroll-smooth bg-[#0a0a0a]">
@@ -54,19 +54,8 @@ const GrowthDashboard = () => {
                  <span className="font-mono text-xs font-bold uppercase tracking-widest">PERFORMANCE OUTLOOK (30-DAY)</span>
                </div>
                <p className="text-[#e5e2e1] font-headline text-2xl md:text-3xl font-medium leading-tight max-w-4xl tracking-tight">
-                   "{performanceOutlook.split('|')[0].trim()}"
+                   "{performanceOutlook.trim()}"
                </p>
-               
-               {performanceOutlook.includes('|') && (
-                 <div className="mt-8 flex flex-col md:flex-row gap-8 pt-6 border-t border-[#353534]">
-                   <div>
-                     <span className="block text-[10px] font-mono text-[#e5e2e1]/40 uppercase mb-2">Target Metrics Baseline</span>
-                     <span className="text-[#27ae60] font-headline font-bold text-lg md:text-xl">
-                       {performanceOutlook.substring(performanceOutlook.indexOf('|') + 1).replace('|','').trim()}
-                     </span>
-                   </div>
-                 </div>
-               )}
             </section>
          )}
 

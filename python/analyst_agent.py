@@ -39,20 +39,57 @@ def run_analyst_agent(
     t0 = time.monotonic()
 
     system_prompt = (
-        "Be a YouTube market analyst. Evaluate market reality with brutal honesty based only on the data provided\n"
-        "market_truth: One bold sentence stating what this market actually rewards right now. Under 20 words\n"
-        "dominant_force: One sentence — who wins here and the single specific structural reason why. Under 20 words\n"
-        "competitor_weakness: The specific structural failure of the top competing video. Where it loses viewers and why. Under 20 words. Derive from top_comments\n"
-        "audience_craving: One sentence from comment patterns only — what viewers are begging for that nobody delivers. Under 20 words. Must reference the actual comments provided\n"
-        "content_gaps: Exactly 3 items. Each gap must be derived STRICTLY from the provided top_comments — not from general knowledge. The source field must say where the gap was found e.g. \"Repeated in 3 competitor comments\" or \"Top upvoted complaint\"\n"
-        "small_creator_verdict: Infer from competitor subscriber counts in the data. If median competitor subscriber count is above 500k use \"AVOID\". If 100k-500k use \"HARD\". Below 100k use \"CAN_WIN\". Must be exactly one of: \"CAN_WIN\", \"HARD\", \"AVOID\"\n"
-        "small_creator_reason: One sentence explaining the small_creator_verdict\n"
-        "algorithm_signal: One specific sentence about how this content type and topic structure will interact with the YouTube algorithm — based on the topic category and competitor patterns observed\n"
-        "satisfaction_risk: Integer 1-10. Measures the gap between what the video title promises and what can realistically be delivered given the complexity of the topic. Higher = bigger gap = higher risk of viewer disappointment\n"
-        "content_archetype: Classify this idea as exactly one of: \"CORE_AUDIENCE\" (educational, evergreen, serves existing fans), \"VIRAL_REACH\" (emotional, broad appeal, shareable), \"SEARCH_EVERGREEN\" (search-intent driven, tutorial, how-to). Must be exactly one of these three strings\n"
-        "channel_strength: If creator_dna is provided, one sentence explaining how that creator's specific style is a strategic weapon in this exact market. If no creator_dna provided, output \"Provide creator DNA for personalised analysis\"\n"
-        "channel_risk: If creator_dna is provided, one sentence explaining what in their style works against them specifically in this market. If no creator_dna provided, output \"Provide creator DNA for personalised analysis\"\n"
-        "No paragraphs. All strings under 25 words except content_gaps items. If data is insufficient for any field output \"Insufficient data\" — never hallucinate"
+        "You are a YouTube market analyst. Output ONLY a single valid JSON "
+        "object with EXACTLY these keys — no extra keys, no missing keys:\n"
+        "market_truth, dominant_force, competitor_weakness, audience_craving, "
+        "content_gaps, small_creator_verdict, small_creator_reason, "
+        "algorithm_signal, satisfaction_risk, content_archetype, "
+        "channel_strength, channel_risk\n\n"
+        "FIELD RULES:\n"
+        "market_truth: One bold sentence stating what this market actually "
+        "rewards right now. Under 20 words.\n"
+        "dominant_force: One sentence — who wins here and the single specific "
+        "structural reason why. Under 20 words.\n"
+        "competitor_weakness: The specific structural failure of the top "
+        "competing video. Under 20 words. Derive from top_comments.\n"
+        "audience_craving: One sentence from comment patterns only — what "
+        "viewers are begging for that nobody delivers. Under 20 words. Must "
+        "reference the actual comments provided.\n"
+        "content_gaps: JSON array of EXACTLY 3 objects, each with keys 'gap' "
+        "and 'source'. Each gap must be derived STRICTLY from the provided "
+        "top_comments. The source field must say where the gap was found e.g. "
+        "'Repeated in 3 competitor comments' or 'Top upvoted complaint'.\n"
+        "small_creator_verdict: MUST be exactly one of these three strings: "
+        "'CAN_WIN', 'HARD', or 'AVOID'. "
+        "If median competitor subscriber count is above 500000 use 'AVOID'. "
+        "If 100000 to 500000 use 'HARD'. Below 100000 use 'CAN_WIN'.\n"
+        "small_creator_reason: One sentence explaining the small_creator_verdict.\n"
+        "algorithm_signal: One specific sentence about how this content type "
+        "will interact with the YouTube algorithm based on competitor patterns.\n"
+        "satisfaction_risk: Integer 1-10. Measures the gap between what the "
+        "title promises and what can realistically be delivered.\n"
+        "content_archetype: MUST be exactly one of these three strings: "
+        "'CORE_AUDIENCE', 'VIRAL_REACH', or 'SEARCH_EVERGREEN'.\n"
+        "channel_strength: If creator_dna is provided, one sentence explaining "
+        "how that creator's style is a strategic weapon in this market. If no "
+        "creator_dna provided, output exactly: "
+        "'Provide creator DNA for personalised analysis'\n"
+        "channel_risk: If creator_dna is provided, one sentence explaining what "
+        "in their style works against them in this market. If no creator_dna "
+        "provided, output exactly: "
+        "'Provide creator DNA for personalised analysis'\n\n"
+        "CRITICAL RULES:\n"
+        "1. Output ONLY the JSON object. No markdown, no code fences, no "
+        "explanation before or after.\n"
+        "2. Every single one of the 12 keys listed above MUST be present.\n"
+        "3. If data is insufficient for a field output the string "
+        "'Insufficient data' as the value — never omit the key.\n"
+        "4. content_gaps MUST always be an array of exactly 3 objects.\n"
+        "5. satisfaction_risk MUST always be an integer, never a string.\n"
+        "6. small_creator_verdict MUST be exactly 'CAN_WIN', 'HARD', or "
+        "'AVOID' — no other value is acceptable.\n"
+        "7. content_archetype MUST be exactly 'CORE_AUDIENCE', 'VIRAL_REACH', "
+        "or 'SEARCH_EVERGREEN' — no other value is acceptable."
     )
 
     creator_dna = context.request.creator_dna
@@ -64,7 +101,7 @@ def run_analyst_agent(
         "COMPETITOR THUMBNAILS:\n"
         f"{json.dumps(context.competitors.thumbnails, indent=2)}\n\n"
         "COMPETITOR COMMENTS — PRIMARY DATA SOURCE FOR GAPS:\n"
-        f"{context.competitors.top_comments}\n"
+        f"{context.competitors.top_comments[:6000]}\n"
     )
 
     # Append graph signals if available
@@ -103,9 +140,8 @@ def run_analyst_agent(
             generation_config=genai.GenerationConfig(
                 temperature=0.7,
                 response_mime_type="application/json",
-                response_schema=AnalystAgentOutput,
             ),
-            timeout_s=150,
+            timeout_s=240,
         )
     except Exception:
         traceback.print_exc()
@@ -128,6 +164,7 @@ def run_analyst_agent(
         return result
 
     raw_text = response.text or ""
+    print(f"[analyst] raw response length: {len(raw_text)} chars")
 
     try:
         parsed = llm_service._parse(raw_text, AnalystAgentOutput)

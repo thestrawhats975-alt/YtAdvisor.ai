@@ -320,14 +320,33 @@ def scrape_competitor_intelligence(
             batch = _fetch_comments_for_video(
                 youtube, video.video_id, video.title, max_comments=30
             )
-            comment_lines.extend(batch)
+            raw_total = len(batch)
+
+            prefix = f"[{video.title}] "
+            raw_texts: List[str] = []
+            for line in batch:
+                if isinstance(line, str) and line.startswith(prefix):
+                    raw_texts.append(line[len(prefix) :])
+                elif isinstance(line, str):
+                    parts = line.split("] ", 1)
+                    raw_texts.append(parts[1] if len(parts) == 2 else line)
+
+            filtered = [t for t in raw_texts if len(t.strip()) >= 50]
+            surviving = len(filtered)
             print(
-                f"[scraper] comments from '{video.title[:40]}': {len(batch)} collected"
+                f"[scraper] '{video.title[:40]}': {surviving} of {raw_total} comments passed filter"
             )
+
+            title_trunc = video.title[:40]
+            for t in filtered:
+                comment_trunc = t.strip()[:150]
+                comment_lines.append(f"[{title_trunc}] {comment_trunc}")
 
         top_comments = "\n".join(comment_lines)
         if not top_comments.strip():
             top_comments = "No comments available for analysis"
+
+        top_comments = top_comments[:8000]
 
         # Stage I — Median subscriber count
         subs_positive = [
