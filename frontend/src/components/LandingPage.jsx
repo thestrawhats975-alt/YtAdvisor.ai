@@ -537,96 +537,88 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section className="py-24 md:py-32 bg-surface-container-low/20">
+        {/* --- ONE-SCREEN CINEMATIC PAIN SECTION --- */}
+        <section className="relative h-screen min-h-[700px] w-full overflow-hidden flex flex-col items-center justify-center">
+
+          {/* 1. THE VIDEO BACKDROP CONTAINER */}
+          <div className="absolute inset-0 z-0">
+
+            {/* Layer A: The HD Video (Cropped watermark + Best Quality) */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover opacity-60 mix-blend-lighten"
+              style={{ objectPosition: 'center 80%' }}
+              src="https://res.cloudinary.com/dqy8yhjlk/video/upload/c_crop,h_0.9,g_north/q_auto:best,f_auto,w_1920/v1775912944/Video_Generation_Progress_Update_ltw6af.mp4"
+            />
+
+            {/* Layer B: Dynamic Masking (Lighter at the top to reveal the graph) */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/50 via-[#050505]/60 to-[#050505]/20 z-10" />
+
+            {/* Layer C: Film Grain Overlay (Sitting on top of the mask, un-nested) */}
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZUZpbHRlciI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNjUiIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgibm9pc2VGaWx0ZXIpIi8+PC9zdmc+')] opacity-[0.03] z-20 pointer-events-none mix-blend-overlay" />
+
+          </div>
+
+          {/* 3. CENTERED CONTENT */}
+          <div className="max-w-5xl mx-auto px-6 relative z-30 text-center flex flex-col justify-center h-full pt-16">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <h2 className="font-headline text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase text-white leading-[0.9]">
+                You've been<br />
+                here before.
+              </h2>
+
+              <div className="space-y-6 max-w-4xl mx-auto">
+                <p className="text-[#cccccc] text-lg md:text-xl font-body leading-relaxed max-w-3xl mx-auto">
+                  You spent weeks producing a video. The execution was flawless. You invested real time and money. <span className="text-white font-bold italic">But it still failed to hit your usual numbers.</span>
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left border-y border-white/10 py-6">
+                  <p className="text-[#aaaaaa] text-sm md:text-base leading-relaxed">
+                    Not because the quality was bad. Because you are competing against <span className="text-white font-bold">2.6 million</span> new uploads every single day.
+                  </p>
+                  <p className="text-[#aaaaaa] text-sm md:text-base leading-relaxed">
+                    YouTube is a winner-takes-all market — less than <span className="text-white font-bold">1%</span> of videos capture over <span className="text-white font-bold">80%</span> of the platform's total views.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <p className="text-[#aaaaaa] text-xs font-label uppercase tracking-[0.3em] mb-3">The Verdict is Clear</p>
+                  <p className="text-white font-bold text-2xl md:text-4xl tracking-tight leading-tight uppercase">
+                    Stop wasting resources on <span className="text-[#FF0000]">dead ideas</span>. <br />
+                    Get hard market intelligence.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* 4. TACTICAL HUD ELEMENTS */}
+          <div className="absolute top-24 right-8 hidden xl:block opacity-40 z-20">
+            <div className="font-label text-[9px] space-y-1.5 text-[#FF0000]">
+              <p>ANALYZING_RETENTION_FAILURE...</p>
+              <p>PATTERN_MATCH: 88.4%_PROBABILITY</p>
+            </div>
+          </div>
+          <div className="absolute bottom-12 left-8 hidden xl:block opacity-40 z-20">
+            <div className="font-label text-[9px] space-y-1.5 text-[#FF0000]">
+              <p>MARKET_NOISE_THRESHOLD: EXCEEDED</p>
+              <p>COMPETITIVE_SATURATION: CRITICAL</p>
+            </div>
+          </div>
+        </section>
+
+        {/* --- SECTION 2: WHO IT'S FOR (The Cards) --- */}
+        <section className="py-24 bg-[#050505] border-t border-white/5 relative z-20">
           <div className="max-w-7xl mx-auto px-4 md:px-8">
 
-            {/* The Pain */}
-            {/* <motion.div initial={{ opacity: 0, x: -32 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="max-w-4xl mb-32 border-l-4 border-[#FF0000] pl-6 md:pl-10">
-              <h2 className="font-headline text-4xl md:text-6xl font-black tracking-tighter mb-8 uppercase text-on-surface">You've been here before.</h2>
-              <div className="space-y-6 text-on-surface/60 text-lg md:text-xl leading-relaxed font-body">
-                <p>ou spent weeks producing a video. The execution was flawless. You invested real time and money. But it still failed to hit your usual numbers.</p>
-                <p>Not because the quality was bad. Because the topic was already too crowded. Because someone else beat you to it. Because the angle didn't match what the audience craves right now.</p>
-                <p className="text-on-surface/90 font-bold text-2xl pt-4">You can't afford to waste resources on a dead idea. You need facts and better intelligence, not guesses.</p>
-              </div>
-            </motion.div> */}
-            {/* The Pain */}
-            <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center mb-32">
-              {/* Left Text Content */}
-              <motion.div
-                initial={{ opacity: 0, x: -32 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="lg:w-1/2 border-l-4 border-[#FF0000] pl-6 md:pl-10 relative z-10"
-              >
-                <h2 className="font-headline text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-8 uppercase text-on-surface leading-[0.95]">
-                  You've been<br />here before.
-                </h2>
-                <div className="space-y-6 text-on-surface/60 text-lg md:text-xl leading-relaxed font-body">
-                  <p>
-                    You spent weeks producing a video. The execution was flawless. You invested real time and money. But it still failed to hit your usual numbers.
-                  </p>
-                  <p>
-                    Not because the quality was bad. Because you are competing against <span className="text-on-surface font-bold">2.6 million</span> new videos every single day. YouTube is a winner-takes-all market — data shows that less than <span className="text-[#FF0000] font-bold">1%</span> of videos capture over <span className="text-[#FF0000] font-bold">80%</span> of the platform's total views.
-                  </p>
-                  <p>
-                    If your angle is even slightly off, or your hook fails in the first <span className="text-on-surface font-bold">30 seconds</span>, the algorithm buries your expensive production to promote a competitor.
-                  </p>
-                  <p className="text-on-surface/90 font-bold text-2xl pt-4">
-                    You can't afford to waste resources on a dead idea. You need hard market intelligence, not guesses.
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Right Video Content */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="lg:w-1/2 w-full relative group"
-              >
-                {/* Ambient Glow */}
-                <div className="absolute -inset-10 bg-[#FF0000]/10 rounded-full blur-[80px] group-hover:bg-[#FF0000]/15 transition-colors duration-1000 pointer-events-none z-0"></div>
-
-                {/* Video Container */}
-                <div className="relative rounded-sm overflow-hidden border border-outline-variant/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] bg-black z-10 aspect-[4/3] transform transition-transform duration-700 group-hover:-translate-y-1">
-
-                  {/* Blending Overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-20 pointer-events-none"></div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A]/50 via-transparent to-transparent z-20 pointer-events-none"></div>
-
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover opacity-80 mix-blend-lighten"
-                    src="https://res.cloudinary.com/dqy8yhjlk/video/upload/c_fill,ar_4:3,q_auto,f_auto/v1775912944/Video_Generation_Progress_Update_ltw6af.mp4"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-
-                  {/* Tactical Badge Overlay */}
-                  <div className="absolute bottom-6 left-6 z-30 flex flex-col gap-2">
-                    <div className="flex items-center gap-3 bg-[#0A0A0A]/80 backdrop-blur-md border border-outline-variant/20 px-3 py-1.5 rounded-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF0000] animate-pulse shadow-[0_0_8px_rgba(255,0,0,1)]"></div>
-                      <span className="font-label text-[9px] uppercase tracking-[0.2em] text-[#FF0000] font-bold">
-                        Retention Velocity // Critical
-                      </span>
-                    </div>
-                    <div className="font-label text-[8px] text-on-surface/30 tracking-widest uppercase pl-1">
-                      SYS_ID: 0X-FLATLINE-DETECTION
-                    </div>
-                  </div>
-
-                  {/* Tech Grid Overlay */}
-                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-50 z-20 pointer-events-none"></div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Who It's For */}
             <div className="mb-16 text-center md:text-left">
               <h2 className="font-headline text-3xl font-black tracking-tight uppercase">Built for creators who treat their channel like a business.</h2>
             </div>
