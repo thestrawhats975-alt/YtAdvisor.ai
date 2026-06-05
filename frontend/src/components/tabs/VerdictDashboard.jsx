@@ -17,16 +17,7 @@ const VerdictDashboard = () => {
   const channelRisk = verdict.channel_risk;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto grid grid-cols-12 gap-8 w-full mt-4">
-      {/* Tab Side Nav (Inner) */}
-      <div className="col-span-1 border-r border-[#1C1B1B] flex flex-col gap-8 pt-4">
-        <div className="sticky top-12 rotate-90 origin-left translate-x-4 whitespace-nowrap">
-          <span className="text-[0.625rem] font-bold tracking-[0.4em] text-[#FF0000] uppercase font-headline">SECTION: VERDICT</span>
-        </div>
-      </div>
-
-      {/* Content Grid */}
-      <div className="col-span-11 space-y-12 pb-16">
+    <div className="p-8 max-w-5xl mx-auto w-full space-y-12 pb-16 mt-4">
         
         {/* Mission Reframe -> Idea Upgrade + Market Context */}
         {(ideaUpgrade || marketTruth) && (
@@ -57,8 +48,8 @@ const VerdictDashboard = () => {
 
         {/* Cards Row -> Maps to Performance Outlook conditionally */}
         {(benchmark || outlook) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-[#1C1B1B] p-8 rounded-sm border-l-2 border-[#FF0000] flex flex-col justify-between h-56">
+          <div className="flex flex-col gap-8">
+            <div className="bg-[#1C1B1B] p-8 rounded-sm border-l-2 border-[#FF0000] flex flex-col justify-between">
               <div className="space-y-1">
                 <span className="material-symbols-outlined text-[#FF0000]">speed</span>
                 <h4 className="text-[0.6875rem] font-bold text-[#FF0000] tracking-widest uppercase font-mono">BENCHMARK</h4>
@@ -69,7 +60,7 @@ const VerdictDashboard = () => {
               </div>
             </div>
             
-            <div className="bg-[#1C1B1B] p-8 rounded-sm flex flex-col gap-6 h-56">
+            <div className="bg-[#1C1B1B] p-8 rounded-sm flex flex-col gap-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <span className="material-symbols-outlined text-[#00FF41]">analytics</span>
@@ -91,7 +82,7 @@ const VerdictDashboard = () => {
               <h2 className="font-headline font-black text-xl tracking-tight uppercase">CHANNEL ANALYSIS</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#1C1B1B] rounded-sm overflow-hidden border border-[#1C1B1B]">
+            <div className="flex flex-col gap-4">
               {channelStrength && (
                 <div className="bg-[#0A0A0A] p-8 space-y-4 border-l-4 border-[#00FF41]">
                   <div className="flex items-center gap-2 text-[#00FF41]">
@@ -114,19 +105,9 @@ const VerdictDashboard = () => {
           </section>
         )}
 
-        {/* Data Stream Visualizer (Aesthetic element always renders) */}
-        <div className="grid grid-cols-6 gap-2 h-24 items-end pt-4">
-          <div className="bg-[#FF0000]/20 h-[40%] rounded-t-sm"></div>
-          <div className="bg-[#FF0000]/40 h-[60%] rounded-t-sm"></div>
-          <div className="bg-[#FF0000]/60 h-[90%] rounded-t-sm animate-[pulse_2s_ease-in-out_infinite]"></div>
-          <div className="bg-[#FF0000]/30 h-[50%] rounded-t-sm"></div>
-          <div className="bg-[#FF0000]/80 h-[100%] rounded-t-sm shadow-[0_0_15px_rgba(255,0,0,0.2)]"></div>
-          <div className="bg-[#FF0000]/10 h-[20%] rounded-t-sm"></div>
-        </div>
 
       </div>
-    </div>
-  );
+    );
 };
 
 export default VerdictDashboard;

@@ -24,16 +24,7 @@ const MarketDashboard = () => {
   const satisfactionRisk = market.satisfaction_risk;
 
   return (
-    <div className="pt-8 pb-16 px-10 max-w-7xl mx-auto flex gap-12 w-full">
-      {/* Tab Side Nav (Inner) */}
-      <div className="w-1 flex-shrink-0 border-r border-[#1C1B1B] relative">
-        <div className="sticky top-24 rotate-90 origin-left translate-x-4 whitespace-nowrap">
-          <span className="text-[0.625rem] font-bold tracking-[0.4em] text-[#FF0000] uppercase font-headline">MARKET ANALYSIS</span>
-        </div>
-      </div>
-
-      {/* Main Content Body */}
-      <div className="flex-1 space-y-12">
+    <div className="px-10 py-12 max-w-5xl mx-auto w-full space-y-12">
         {/* Header Section */}
         <section>
           <span className="text-[#FF0000] font-headline font-bold tracking-[0.25em] text-[0.65rem] uppercase">ANALYSIS FEED</span>
@@ -61,7 +52,7 @@ const MarketDashboard = () => {
 
         {/* DOMINANT FORCE & COMPETITOR WEAKNESS (Render conditionally in flex grid) */}
         {(dominantForce || competitorWeakness) && (
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="flex flex-col gap-8">
             {dominantForce && (
               <div className="bg-[#1C1B1B] p-8 rounded-sm border-l-2 border-[#1C1B1B] flex flex-col justify-between min-h-[180px]">
                 <div className="space-y-1 mb-4">
@@ -147,8 +138,7 @@ const MarketDashboard = () => {
           </section>
         )}
       </div>
-    </div>
-  );
+    );
 };
 
 export default MarketDashboard;

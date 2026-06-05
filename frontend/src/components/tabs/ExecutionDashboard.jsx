@@ -107,7 +107,7 @@ const ExecutionDashboard = () => {
             <span className="material-symbols-outlined text-[#E5E2E1]">warning</span>
             <h2 className="text-lg font-headline font-bold text-[#FFFFFF] tracking-tight uppercase">Retention Traps & Fixes</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-4">
             {retentionTraps.map((trap, index) => (
               <div key={index} className="bg-[#1c1b1b] p-6 border border-[#E5E2E1]/10 space-y-4 hover:border-[#970100]/50 transition-colors">
                 <div className="flex items-center gap-2 text-[#FFA000]">
@@ -128,7 +128,7 @@ const ExecutionDashboard = () => {
       )}
 
       {/* THE RULES */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="flex flex-col gap-8">
         {/* Win Conditions */}
         {(winConditions.length > 0) && (
           <div className="space-y-4">
