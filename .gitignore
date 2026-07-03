@@ -22,3 +22,11 @@ ENV/
 build/
 dist/
 *.egg-info/
+
+# Code dump utility and output
+dump_code.py
+codeDump.txt
+
+# Dependencies
+node_modules/
+
