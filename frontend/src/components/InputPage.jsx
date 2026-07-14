@@ -93,7 +93,7 @@ const InputPage = () => {
             // Cache the analysis response to survive page reloads
             localStorage.setItem('dimenziq_analysis', JSON.stringify(data));
             setSuccess(true);
-            navigate('/results');
+            navigate('/results', { state: { data: data } });
             return;
 
           } else if (eventType === 'error') {

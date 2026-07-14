@@ -3,34 +3,84 @@ import { Link, useLocation } from 'react-router-dom';
 
 const ResultsDashboard = () => {
   const { state } = useLocation();
-  const data = state?.data || {};
 
-  // The backend wraps the response payload inside a "data" property and splits into 3 categories
-  const apiPayload = data?.data || {};
-  const analyst = apiPayload.analyst || {};
-  const strategist = apiPayload.strategist || {};
-  const optimizer = apiPayload.optimizer || {};
+  // Resolve data: try location state first, fallback to localStorage
+  let rawData = state?.data;
+  if (!rawData) {
+    try {
+      const cached = localStorage.getItem('dimenziq_analysis');
+      if (cached) {
+        rawData = JSON.parse(cached);
+      }
+    } catch (e) {
+      console.error('Failed to parse cached analysis:', e);
+    }
+  }
+  const data = rawData || {};
 
-  // Directly mapping backend properties 
-  const finalVerdict = optimizer.final_verdict || "Awaiting API...";
-  const verdictReasoning = analyst.market_truth || "[API Data Missing: market_truth]";
-  const exactHookScript = strategist.exact_hook_script || "[API Data Missing: exact_hook_script]";
-  const thumbnailStrategy = strategist.thumbnail_contrast_prompt || "[API Data Missing: thumbnail_contrast_prompt]";
-  
-  const titlePsychologyDesc = strategist.title_psychology || "[API Data Missing: title_psychology]";
-  const satisfactionRisk = analyst.satisfaction_risk || 0;
-  const metrics = optimizer.performance_outlook || "[API Data Missing: performance_outlook]";
-  
-  const pacingGuide = optimizer.pacing_guide || "[API Data Missing: pacing_guide]";
-  const dominantForce = analyst.dominant_force || "[API Data Missing: dominant_force]";
-  const channelLeverage = analyst.channel_leverage || "[API Data Missing: channel_leverage]";
-  
-  const showShortsWarning = optimizer.shorts_test_recommended === true;
+  // Check if we are using the new LangGraph schema structure or the legacy backend wrapper structure
+  const isNewSchema = data?.verdict !== undefined || data?.market !== undefined;
 
-  // The UI designed arrays for these, but backend sent paragraphs. We'll split by sentences/commas for a clean UI layout.
-  const qualityUpgradesList = (optimizer.quality_upgrades || "").split('. ').filter(Boolean);
-  const postPublishList = (optimizer.post_publish_strategy || "").split('. ').filter(Boolean);
-  const contentGapsList = (analyst.content_gaps || "").split(/,\s*|\s+and\s+/).filter(Boolean);
+  // Extract sections
+  const verdict = isNewSchema ? (data.verdict || {}) : {};
+  const market = isNewSchema ? (data.market || {}) : {};
+  const creative = isNewSchema ? (data.creative || {}) : {};
+  const execution = isNewSchema ? (data.execution || {}) : {};
+  const growth = isNewSchema ? (data.growth || {}) : {};
+
+  // Legacy fallback extraction
+  const legacyPayload = data?.data || {};
+  const legacyAnalyst = legacyPayload.analyst || {};
+  const legacyStrategist = legacyPayload.strategist || {};
+  const legacyOptimizer = legacyPayload.optimizer || {};
+
+  // Unified properties mapping
+  const finalVerdict = (isNewSchema ? verdict.final_verdict : legacyOptimizer.final_verdict) || "Awaiting API...";
+  const verdictReasoning = (isNewSchema ? market.market_truth : legacyAnalyst.market_truth) || "[API Data Missing: market_truth]";
+  const exactHookScript = (isNewSchema ? execution.exact_hook_script : legacyStrategist.exact_hook_script) || "[API Data Missing: exact_hook_script]";
+  const thumbnailStrategy = (isNewSchema ? creative.thumbnail_concept : legacyStrategist.thumbnail_contrast_prompt) || "[API Data Missing: thumbnail_contrast_prompt]";
+  const titlePsychologyDesc = (isNewSchema ? creative.title_psychology : legacyStrategist.title_psychology) || "[API Data Missing: title_psychology]";
+  const satisfactionRisk = (isNewSchema ? market.satisfaction_risk : legacyAnalyst.satisfaction_risk) || 0;
+  const metrics = (isNewSchema ? verdict.performance_outlook : legacyOptimizer.performance_outlook) || "[API Data Missing: performance_outlook]";
+
+  // Pacing timeline mapping: new schema has pacing_timeline (list), legacy has pacing_guide (string)
+  let pacingGuide = "";
+  if (isNewSchema) {
+    pacingGuide = Array.isArray(execution.pacing_timeline) ? execution.pacing_timeline.join('. ') : (execution.pacing_timeline || "");
+  } else {
+    pacingGuide = legacyOptimizer.pacing_guide || "";
+  }
+  if (!pacingGuide) pacingGuide = "[API Data Missing: pacing_guide]";
+
+  const dominantForce = (isNewSchema ? market.dominant_force : legacyAnalyst.dominant_force) || "[API Data Missing: dominant_force]";
+  const channelLeverage = (isNewSchema ? verdict.channel_strength : legacyAnalyst.channel_leverage) || "[API Data Missing: channel_leverage]";
+  const showShortsWarning = isNewSchema ? (execution.shorts_test_recommended === true) : (legacyOptimizer.shorts_test_recommended === true);
+
+  // Lists parsing
+  let qualityUpgradesList = [];
+  if (isNewSchema) {
+    qualityUpgradesList = (verdict.idea_upgrade || "").split('. ').filter(Boolean);
+  } else {
+    qualityUpgradesList = (legacyOptimizer.quality_upgrades || "").split('. ').filter(Boolean);
+  }
+
+  let postPublishList = [];
+  if (isNewSchema) {
+    const pinned = growth.pinned_comment || "";
+    const seed = growth.community_post_seed || "";
+    postPublishList = [pinned, seed].filter(Boolean);
+  } else {
+    postPublishList = (legacyOptimizer.post_publish_strategy || "").split('. ').filter(Boolean);
+  }
+
+  let contentGapsList = [];
+  if (isNewSchema) {
+    if (Array.isArray(market.content_gaps)) {
+      contentGapsList = market.content_gaps.map(g => typeof g === 'object' ? `${g.gap} (${g.source})` : g);
+    }
+  } else {
+    contentGapsList = (legacyAnalyst.content_gaps || "").split(/,\s*|\s+and\s+/).filter(Boolean);
+  }
 
   return (
     <div className="bg-[#0A0A0A] text-[#e5e2e1] font-body selection:bg-primary/30 min-h-screen relative">
