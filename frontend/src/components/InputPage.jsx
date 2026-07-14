@@ -13,6 +13,7 @@ const InputPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [progressMessages, setProgressMessages] = useState([]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,37 +28,85 @@ const InputPage = () => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
+    setProgressMessages([]);
+
+    const baseUrl = import.meta.env.BACKEND_BASE_URL || '';
+
+    // ── Open the SSE stream ──────────────────────────────────────────────────
+    let response;
+    try {
+      response = await fetch(`${baseUrl}/api/analysis/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ video_idea: formData.videoIdea }),
+      });
+    } catch (err) {
+      console.error('Failed to connect:', err);
+      setError('Failed to connect to the analysis engine.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!response.ok) {
+      setError(`Server responded with status: ${response.status}`);
+      setIsLoading(false);
+      return;
+    }
+
+    // ── Parse the SSE event stream ───────────────────────────────────────────
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
     try {
-      const payload = {
-        video_idea: formData.videoIdea
-      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const baseUrl = import.meta.env.BACKEND_BASE_URL || '';
-      const response = await fetch(`${baseUrl}/api/analysis`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      });
+        buffer += decoder.decode(value, { stream: true });
 
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
+        // SSE events are delimited by a blank line (\n\n)
+        const blocks = buffer.split('\n\n');
+        buffer = blocks.pop(); // keep the incomplete trailing chunk
+
+        for (const block of blocks) {
+          let eventType = 'message';
+          let eventData = '';
+
+          for (const line of block.split('\n')) {
+            if (line.startsWith('event: ')) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith('data: ')) {
+              eventData = line.slice(6);
+            }
+          }
+
+          if (!eventData) continue;
+
+          if (eventType === 'progress') {
+            const parsed = JSON.parse(eventData);
+            setProgressMessages(prev => [...prev, parsed.message]);
+
+          } else if (eventType === 'result') {
+            const data = JSON.parse(eventData);
+            // Cache the analysis response to survive page reloads
+            localStorage.setItem('dimenziq_analysis', JSON.stringify(data));
+            setSuccess(true);
+            navigate('/results');
+            return;
+
+          } else if (eventType === 'error') {
+            const parsed = JSON.parse(eventData);
+            setError(parsed.message || 'Analysis failed.');
+            setIsLoading(false);
+            return;
+          }
+        }
       }
-
-      const data = await response.json();
-      
-      // Cache the analysis response instantly to endure browser page reloads!
-      localStorage.setItem('dimenziq_analysis', JSON.stringify(data));
-      setSuccess(true);
-      
-      // Navigate to the results dashboard generically
-      navigate('/results');
     } catch (err) {
-      console.error('Failed to submit analysis:', err);
-      setError(err.message || 'Failed to connect to the analysis engine.');
+      console.error('Stream error:', err);
+      setError(err.message || 'Connection interrupted during analysis.');
     } finally {
       setIsLoading(false);
     }
@@ -148,6 +197,28 @@ const InputPage = () => {
                   <span>Execute Analysis</span>
                 )}
               </button>
+
+              {/* Live progress log — appears line-by-line as each pipeline stage reports in */}
+              {progressMessages.length > 0 && (
+                <div className="mt-6 w-full space-y-1.5">
+                  {progressMessages.map((msg, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex items-center gap-2.5 font-label text-[10px] uppercase tracking-[0.3em]"
+                      style={{ color: msg.toLowerCase().includes('api key') ? 'rgba(255,160,0,0.7)' : 'rgba(229,226,225,0.35)' }}
+                    >
+                      <span
+                        className="w-1 h-1 rounded-full flex-shrink-0"
+                        style={{ background: msg.toLowerCase().includes('api key') ? 'rgba(255,160,0,0.7)' : 'rgba(189,0,0,0.6)' }}
+                      />
+                      {msg}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.form>
 

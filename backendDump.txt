@@ -97,27 +97,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security-oauth2-client-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
@@ -207,6 +186,48 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class BackendApplication {
 
+	static {
+		try {
+			java.nio.file.Path envPath = java.nio.file.Paths.get(".env");
+			if (!java.nio.file.Files.exists(envPath)) {
+				envPath = java.nio.file.Paths.get("..", ".env");
+			}
+			if (java.nio.file.Files.exists(envPath)) {
+				System.out.println("[env-loader] Found .env file at: " + envPath.toAbsolutePath());
+				java.nio.file.Files.lines(envPath)
+					.map(String::trim)
+					.filter(line -> !line.isEmpty() && !line.startsWith("#"))
+					.forEach(line -> {
+						int eqIdx = line.indexOf('=');
+						if (eqIdx > 0) {
+							String key = line.substring(0, eqIdx).trim();
+							String value = line.substring(eqIdx + 1).trim();
+							if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+								value = value.substring(1, value.length() - 1);
+							}
+							
+							// Map key as-is
+							if (System.getenv(key) == null && System.getProperty(key) == null) {
+								System.setProperty(key, value);
+								System.out.println("[env-loader] Loaded " + key + " (length: " + value.length() + ")");
+							}
+							
+							// Relaxed binding mapper (translate dot/dash notation keys to uppercase-underscore)
+							String envKey = key.replace('.', '_').replace('-', '_').toUpperCase();
+							if (!envKey.equals(key) && System.getenv(envKey) == null && System.getProperty(envKey) == null) {
+								System.setProperty(envKey, value);
+								System.out.println("[env-loader] Relaxed-mapped " + envKey + " from " + key + " (length: " + value.length() + ")");
+							}
+						}
+					});
+			} else {
+				System.out.println("[env-loader] No .env file found. Sourcing solely from system environment.");
+			}
+		} catch (Exception e) {
+			System.err.println("[env-loader] Failed to load .env file: " + e.getMessage());
+		}
+	}
+
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
 	}
@@ -220,28 +241,30 @@ public class BackendApplication {
 
 package com.YtAdvisor.backend.configurations;
 
-import javax.sql.DataSource;
-
-import org.flywaydb.core.Flyway;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
+/*
+ * This file is intentionally left as a no-op class.
+ *
+ * WHY IT WAS REMOVED:
+ * The original @Configuration + @Bean(initMethod = "migrate") caused Flyway
+ * to run migrations TWICE on startup:
+ *   1. Via this custom bean's initMethod
+ *   2. Via Spring Boot's own FlywayAutoConfiguration (triggered by spring.flyway.enabled=true)
+ *
+ * This created a race condition on the flyway_schema_history lock table at boot time.
+ *
+ * FIX:
+ * Flyway is now fully managed by Spring Boot's autoconfiguration. All settings
+ * (locations, baselineOnMigrate, validateOnMigrate, etc.) are configured through
+ * application.properties using the spring.flyway.* namespace — no code needed.
+ *
+ * To add or tune Flyway behaviour, edit application.properties:
+ *   spring.flyway.enabled=true
+ *   spring.flyway.locations=classpath:db/migration
+ *   spring.flyway.baseline-on-migrate=false
+ *   spring.flyway.validate-on-migrate=true
+ */
 public class FlywayConfig {
-
-    @Value("${spring.flyway.locations:classpath:db/migration}")
-    private String[] locations;
-
-    @Bean(initMethod = "migrate")
-    public Flyway flyway(DataSource dataSource) {
-        return Flyway.configure()
-                .dataSource(dataSource)
-                .locations(locations)
-                .baselineOnMigrate(false)
-                .validateOnMigrate(true)
-                .load();
-    }
+    // Intentionally empty — Spring Boot autoconfiguration handles Flyway.
 }
 
 
@@ -298,18 +321,20 @@ public class WebClientConfig {
 
 package com.YtAdvisor.backend.controllers;
 
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.YtAdvisor.backend.dto.AnalysisRequestDto;
 import com.YtAdvisor.backend.entities.User;
 import com.YtAdvisor.backend.repositories.UserRepository;
+import com.YtAdvisor.backend.security.AuthUtil;
 import com.YtAdvisor.backend.services.AnalysisService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -319,7 +344,6 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/analysis")
-@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class AnalysisController {
 
@@ -331,14 +355,9 @@ public class AnalysisController {
     public ResponseEntity<String> analyse(@Valid @RequestBody AnalysisRequestDto dto) {
         System.out.println("Received analysis request: " + dto);
 
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        if (!(principal instanceof DefaultOidcUser)) {
-            throw new RuntimeException("Not logged in");
-        }
-
-        String email = ((DefaultOidcUser) principal).getEmail();
-        User user = userRepository.findByEmail(email).orElseThrow();
+        UUID userId = AuthUtil.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         JsonNode result = analysisService.analyse(user.getId(), dto.getVideoIdea());
 
@@ -347,6 +366,63 @@ public class AnalysisController {
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize response", e);
         }
+    }
+}
+
+
+// ==============================================================================
+// File: backend/src/main/java/com/YtAdvisor/backend/controllers/AnalysisStreamController.java
+// ==============================================================================
+
+package com.YtAdvisor.backend.controllers;
+
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.YtAdvisor.backend.dto.AnalysisRequestDto;
+import com.YtAdvisor.backend.entities.User;
+import com.YtAdvisor.backend.repositories.UserRepository;
+import com.YtAdvisor.backend.security.AuthUtil;
+import com.YtAdvisor.backend.services.AnalysisStreamService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/analysis")
+@RequiredArgsConstructor
+public class AnalysisStreamController {
+
+    private final AnalysisStreamService analysisStreamService;
+    private final UserRepository userRepository;
+
+    /**
+     * POST /api/analysis/stream
+     *
+     * Streaming version of POST /api/analysis.
+     * Returns text/event-stream with events:
+     *   - progress  {"message": "..."}  one per pipeline stage / key rotation
+     *   - result    {full DimenziqAnalysisOutput JSON}
+     *   - error     {"message": "..."}
+     *
+     * Auth is enforced by JwtAuthFilter exactly like every other /api/** endpoint.
+     * Tier limits are checked synchronously before the stream opens.
+     */
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamAnalysis(@Valid @RequestBody AnalysisRequestDto dto) {
+        UUID userId = AuthUtil.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        return analysisStreamService.startStream(user, dto.getVideoIdea());
     }
 }
 
@@ -361,7 +437,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -369,6 +444,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.YtAdvisor.backend.security.AuthUtil;
 
 import com.YtAdvisor.backend.dto.ChannelConnectDto;
 import com.YtAdvisor.backend.dto.ChannelStatusResponse;
@@ -393,7 +470,7 @@ public class ChannelController {
     @PostMapping("/connect")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public Map<String, Object> connect(@Valid @RequestBody ChannelConnectDto dto) {
-        UUID userId = UUID.fromString((String) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        UUID userId = AuthUtil.getCurrentUserId();
 
         Channel channel = channelService.connectChannel(userId, dto.getChannelInput());
 
@@ -409,8 +486,7 @@ public class ChannelController {
 
     @GetMapping("/status")
     public ChannelStatusResponse status() {
-        UUID userId = (UUID) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
+        UUID userId = AuthUtil.getCurrentUserId();
 
         Channel channel = channelRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -435,6 +511,31 @@ public class ChannelController {
 
 
 // ==============================================================================
+// File: backend/src/main/java/com/YtAdvisor/backend/controllers/HealthController.java
+// ==============================================================================
+
+package com.YtAdvisor.backend.controllers;
+
+import java.time.Instant;
+import java.util.Map;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HealthController {
+
+    @GetMapping("/api/health")
+    public Map<String, Object> health() {
+        return Map.of(
+            "status", "UP",
+            "timestamp", Instant.now().toString()
+        );
+    }
+}
+
+
+// ==============================================================================
 // File: backend/src/main/java/com/YtAdvisor/backend/controllers/SecurityController.java
 // ==============================================================================
 
@@ -444,15 +545,18 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.YtAdvisor.backend.entities.User;
 import com.YtAdvisor.backend.repositories.UserRepository;
+import com.YtAdvisor.backend.security.AuthUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -462,25 +566,19 @@ public class SecurityController {
 
     private UserRepository userRepository;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     public SecurityController(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @GetMapping("/api/user/me")
     public Map<String, Object> me() {
-        // Grab the Google user object
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UUID userId = AuthUtil.getCurrentUserId();
 
-        if (!(principal instanceof DefaultOidcUser)) {
-            throw new RuntimeException("Not logged in");
-        }
-
-        // Extract their Google email
-        String email = ((DefaultOidcUser) principal).getEmail();
-
-        // Find the user in your database using their email
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        User user = userOpt.orElseThrow(() -> new RuntimeException("User not found in database"));
+        Optional<User> userOpt = userRepository.findById(userId);
+        User user = userOpt.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found in database"));
 
         return Map.of(
                 "id", user.getId(),
@@ -491,7 +589,7 @@ public class SecurityController {
 
     @GetMapping("/post-login")
     public void postLogin(HttpServletResponse response) throws IOException {
-        response.sendRedirect("http://localhost:5173/pricing");
+        response.sendRedirect(frontendUrl + "/pricing");
     }
 
     @GetMapping("/test")
@@ -1353,6 +1451,35 @@ public class PipelineStatusScheduler {
 
 
 // ==============================================================================
+// File: backend/src/main/java/com/YtAdvisor/backend/security/AuthUtil.java
+// ==============================================================================
+
+package com.YtAdvisor.backend.security;
+
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.server.ResponseStatusException;
+
+public class AuthUtil {
+
+    public static UUID getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null || "anonymousUser".equals(authentication.getPrincipal())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        Object principal = authentication.getPrincipal();
+        try {
+            return UUID.fromString(principal.toString());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication principal");
+        }
+    }
+}
+
+
+// ==============================================================================
 // File: backend/src/main/java/com/YtAdvisor/backend/security/JwtAuthFilter.java
 // ==============================================================================
 
@@ -1508,6 +1635,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    @Value("${app.cookie-secure}")
+    private boolean cookieSecure;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
@@ -1548,7 +1678,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         ResponseCookie cookie = ResponseCookie.from("auth_token", token)
                 .httpOnly(true)
-                .secure(false)          // false in local dev if not using HTTPS
+                .secure(cookieSecure)
                 .sameSite("None")
                 .path("/")
                 .maxAge(Duration.ofDays(1))
@@ -1566,6 +1696,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 package com.YtAdvisor.backend.security;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -1573,6 +1706,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 
@@ -1584,9 +1720,13 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final JwtAuthFilter jwtAuthFilter;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
@@ -1595,7 +1735,8 @@ public class SecurityConfig {
                     "/error",
                     "/oauth2/**",
                     "/login/**",
-                    "/api/auth/**"
+                    "/api/auth/**",
+                    "/api/health"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -1611,6 +1752,18 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(frontendUrl));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
 
 
@@ -1625,7 +1778,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.YtAdvisor.backend.entities.AnalysisRequest;
@@ -1658,21 +1811,36 @@ public class AnalysisService {
     private final PythonClient pythonClient;
     private final ObjectMapper objectMapper;
     private final TierService tierService;
+    // TransactionTemplate is auto-configured by Spring Boot when spring-boot-starter-data-jpa
+    // is present — no extra bean definition needed.
+    private final TransactionTemplate transactionTemplate;
 
-    @Transactional
+    /*
+     * NOT @Transactional — the previous @Transactional on this method held a DB
+     * connection open for the entire duration of callAutoAnalyze(), which can take
+     * up to 180 seconds. With a default HikariCP pool of 10, even a handful of
+     * concurrent analysis requests would exhaust all connections and freeze the app.
+     *
+     * Fix: each group of DB writes now runs in its own short TransactionTemplate
+     * block that commits immediately, freeing the connection back to the pool before
+     * the network call to Python begins.
+     */
     public JsonNode analyse(UUID userId, String videoIdea) {
-        // 1. Load user
+
+        // ── Step 1: Load user ─────────────────────────────────────────────────
+        // Simple read — Spring Data's built-in @Transactional(readOnly) handles it.
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found"));
 
-        // Check tier and consume request
+        // ── Step 2: Tier check ────────────────────────────────────────────────
+        // TierService.checkAndConsumeRequest is @Transactional, so it opens and
+        // commits its own short transaction. No outer transaction wraps it.
         tierService.checkAndConsumeRequest(user);
 
-        // 2. Load channel and latest reliable DNA (if available)
+        // ── Step 3: Load channel and latest reliable DNA ──────────────────────
         Channel channel = channelRepository.findByUser_Id(userId).orElse(null);
         String creatorDna = null;
-
         if (channel != null) {
             DnaSnapshot snap = dnaSnapshotRepository
                     .findTopByChannel_IdOrderByCreatedAtDesc(channel.getId())
@@ -1683,61 +1851,255 @@ public class AnalysisService {
             }
         }
 
-        // 3. Save request as PROCESSING
-        AnalysisRequest analysisRequest = new AnalysisRequest();
-        analysisRequest.setUser(user);
-        analysisRequest.setChannel(channel);
-        analysisRequest.setVideoIdea(videoIdea);
-        analysisRequest.setCreatorDnaUsed(creatorDna);
-        analysisRequest.setStatus("PROCESSING");
-        analysisRequest = analysisRequestRepository.save(analysisRequest);
+        // ── Step 4: Persist PROCESSING record ────────────────────────────────
+        // TransactionTemplate opens a transaction, saves, and commits immediately.
+        // The DB connection is returned to the pool before we call Python.
+        final Channel finalChannel = channel;
+        final String finalCreatorDna = creatorDna;
+        final AnalysisRequest analysisRequest = transactionTemplate.execute(status -> {
+            AnalysisRequest req = new AnalysisRequest();
+            req.setUser(user);
+            req.setChannel(finalChannel);
+            req.setVideoIdea(videoIdea);
+            req.setCreatorDnaUsed(finalCreatorDna);
+            req.setStatus("PROCESSING");
+            return analysisRequestRepository.save(req);
+        });
 
-        // 4. Call Python
+        // ── Step 5: Call Python ───────────────────────────────────────────────
+        // No database connection is held here. This call can take 60–180 seconds.
         JsonNode rawJson;
         try {
             String rawString = pythonClient.callAutoAnalyze(videoIdea, creatorDna);
             rawJson = objectMapper.readTree(rawString);
         } catch (Exception e) {
             log.error("[analysis] Python call failed: {}", e.getMessage());
-            analysisRequest.setStatus("FAILED");
-            analysisRequest.setErrorMessage(e.getMessage());
-            analysisRequest.setCompletedAt(OffsetDateTime.now());
-            analysisRequestRepository.save(analysisRequest);
+            // Short transaction just to mark the record as FAILED, then release.
+            transactionTemplate.execute(status -> {
+                analysisRequest.setStatus("FAILED");
+                analysisRequest.setErrorMessage(e.getMessage());
+                analysisRequest.setCompletedAt(OffsetDateTime.now());
+                return analysisRequestRepository.save(analysisRequest);
+            });
             throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY, "Analysis service error: " + e.getMessage());
         }
 
-        // 5. Persist full response
-        String rawStr;
-        try {
-            rawStr = objectMapper.writeValueAsString(rawJson);
-        } catch (JsonProcessingException e) {
-            rawStr = "{}";
-        }
+        // ── Step 6: Persist result and mark COMPLETED ─────────────────────────
+        // Another short transaction — response save + analytics + status update,
+        // all committed atomically, connection released immediately after.
+        final JsonNode finalRawJson = rawJson;
+        transactionTemplate.execute(status -> {
+            String rawStr;
+            try {
+                rawStr = objectMapper.writeValueAsString(finalRawJson);
+            } catch (JsonProcessingException ex) {
+                rawStr = "{}";
+            }
 
-        AnalysisResponse analysisResponse = new AnalysisResponse();
-        analysisResponse.setRequest(analysisRequest);
-        analysisResponse.setRawResponse(rawStr);
-        analysisResponse.setFinalVerdict(
-                rawJson.path("verdict").path("final_verdict").asText(null));
-        analysisResponse.setConfidence(
-                rawJson.path("verdict").path("confidence").asText(null));
-        analysisResponse.setSmallCreatorVerdict(
-                rawJson.path("market").path("small_creator_verdict").asText(null));
-        analysisResponseRepository.save(analysisResponse);
+            AnalysisResponse analysisResponse = new AnalysisResponse();
+            analysisResponse.setRequest(analysisRequest);
+            analysisResponse.setRawResponse(rawStr);
+            analysisResponse.setFinalVerdict(
+                    finalRawJson.path("verdict").path("final_verdict").asText(null));
+            analysisResponse.setConfidence(
+                    finalRawJson.path("verdict").path("confidence").asText(null));
+            analysisResponse.setSmallCreatorVerdict(
+                    finalRawJson.path("market").path("small_creator_verdict").asText(null));
+            analysisResponseRepository.save(analysisResponse);
 
-        // Record usage for tier limits
-        tierService.recordAnalysisRun(user);
+            // recordAnalysisRun is @Transactional(REQUIRED) — joins the current tx.
+            tierService.recordAnalysisRun(user);
 
-        // 6. Mark request complete
-        analysisRequest.setStatus("COMPLETED");
-        analysisRequest.setCompletedAt(OffsetDateTime.now());
-        analysisRequestRepository.save(analysisRequest);
+            analysisRequest.setStatus("COMPLETED");
+            analysisRequest.setCompletedAt(OffsetDateTime.now());
+            analysisRequestRepository.save(analysisRequest);
 
-        log.info("[analysis] completed for userId={}, verdict={}",
-                userId, analysisResponse.getFinalVerdict());
+            log.info("[analysis] completed for userId={}, verdict={}",
+                    userId, analysisResponse.getFinalVerdict());
+
+            return null;
+        });
 
         return rawJson;
+    }
+}
+
+
+// ==============================================================================
+// File: backend/src/main/java/com/YtAdvisor/backend/services/AnalysisStreamService.java
+// ==============================================================================
+
+package com.YtAdvisor.backend.services;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.YtAdvisor.backend.entities.AnalysisRequest;
+import com.YtAdvisor.backend.entities.AnalysisResponse;
+import com.YtAdvisor.backend.entities.Channel;
+import com.YtAdvisor.backend.entities.DnaSnapshot;
+import com.YtAdvisor.backend.entities.User;
+import com.YtAdvisor.backend.repositories.AnalysisRequestRepository;
+import com.YtAdvisor.backend.repositories.AnalysisResponseRepository;
+import com.YtAdvisor.backend.repositories.ChannelRepository;
+import com.YtAdvisor.backend.repositories.DnaSnapshotRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.scheduler.Schedulers;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class AnalysisStreamService {
+
+    private final ChannelRepository channelRepository;
+    private final DnaSnapshotRepository dnaSnapshotRepository;
+    private final AnalysisRequestRepository analysisRequestRepository;
+    private final AnalysisResponseRepository analysisResponseRepository;
+    private final WebClient pythonWebClient;
+    private final ObjectMapper objectMapper;
+    private final TierService tierService;
+
+    /**
+     * Tier check + DNA load happen synchronously (on the servlet thread) before this
+     * method returns, so ResponseStatusException propagates cleanly to the client.
+     * The actual SSE proxy runs asynchronously on the bounded-elastic scheduler.
+     */
+    public SseEmitter startStream(User user, String videoIdea) {
+        // 1. Tier check — throws 429 ResponseStatusException if over limit
+        tierService.checkAndConsumeRequest(user);
+
+        // 2. Load creator DNA from the latest reliable snapshot (optional)
+        Channel channel = channelRepository.findByUser_Id(user.getId()).orElse(null);
+        String creatorDna = null;
+        if (channel != null) {
+            DnaSnapshot snap = dnaSnapshotRepository
+                    .findTopByChannel_IdOrderByCreatedAtDesc(channel.getId())
+                    .orElse(null);
+            if (snap != null && Boolean.TRUE.equals(snap.getIsReliable())) {
+                creatorDna = snap.getDnaSummary();
+                log.info("[stream] using DNA snapshot for channel: {}", channel.getYoutubeChannelId());
+            }
+        }
+
+        // 3. Persist analysis request as PROCESSING
+        AnalysisRequest req = new AnalysisRequest();
+        req.setUser(user);
+        req.setChannel(channel);
+        req.setVideoIdea(videoIdea);
+        req.setCreatorDnaUsed(creatorDna);
+        req.setStatus("PROCESSING");
+        final AnalysisRequest savedReq = analysisRequestRepository.save(req);
+        final String finalCreatorDna = creatorDna;
+
+        // 4. Build request body for Python
+        Map<String, Object> body = new HashMap<>();
+        body.put("video_idea", videoIdea);
+        if (finalCreatorDna != null) body.put("creator_dna", finalCreatorDna);
+
+        // 5. Create the SseEmitter (200-second timeout to cover the full pipeline)
+        SseEmitter emitter = new SseEmitter(200_000L);
+        AtomicBoolean resultReceived = new AtomicBoolean(false);
+
+        // 6. Subscribe to Python's SSE stream on the bounded-elastic pool
+        //    (publishOn ensures JPA saves in callbacks run on a blocking-safe thread)
+        pythonWebClient.post()
+                .uri("/api/v1/analyze/stream")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                .publishOn(Schedulers.boundedElastic())
+                .subscribe(
+                        event -> handleEvent(event, emitter, savedReq, user, resultReceived),
+                        error -> {
+                            log.error("[stream] Python stream error: {}", error.getMessage());
+                            if (!resultReceived.get()) {
+                                markFailed(savedReq, error.getMessage());
+                            }
+                            emitter.completeWithError(error);
+                        },
+                        emitter::complete
+                );
+
+        return emitter;
+    }
+
+    // ── Event handler ─────────────────────────────────────────────────────────
+
+    private void handleEvent(ServerSentEvent<String> event,
+                             SseEmitter emitter,
+                             AnalysisRequest req,
+                             User user,
+                             AtomicBoolean resultReceived) {
+        String type = event.event() != null ? event.event() : "message";
+        String data = event.data() != null ? event.data() : "";
+        try {
+            // Forward every event straight to the frontend
+            emitter.send(SseEmitter.event().name(type).data(data));
+
+            if ("result".equals(type)) {
+                resultReceived.set(true);
+                persistResult(req, data, user);
+            } else if ("error".equals(type)) {
+                markFailed(req, data);
+            }
+        } catch (IOException e) {
+            log.warn("[stream] emitter send failed (client disconnected?): {}", e.getMessage());
+            emitter.completeWithError(e);
+        }
+    }
+
+    // ── DB persistence helpers ─────────────────────────────────────────────────
+
+    private void persistResult(AnalysisRequest req, String rawJson, User user) {
+        try {
+            JsonNode rawNode = objectMapper.readTree(rawJson);
+            AnalysisResponse resp = new AnalysisResponse();
+            resp.setRequest(req);
+            resp.setRawResponse(rawJson);
+            resp.setFinalVerdict(rawNode.path("verdict").path("final_verdict").asText(null));
+            resp.setConfidence(rawNode.path("verdict").path("confidence").asText(null));
+            resp.setSmallCreatorVerdict(rawNode.path("market").path("small_creator_verdict").asText(null));
+            analysisResponseRepository.save(resp);
+
+            tierService.recordAnalysisRun(user);
+
+            req.setStatus("COMPLETED");
+            req.setCompletedAt(OffsetDateTime.now());
+            analysisRequestRepository.save(req);
+
+            log.info("[stream] analysis completed and persisted for userId={}", user.getId());
+        } catch (Exception e) {
+            log.error("[stream] failed to persist result: {}", e.getMessage());
+        }
+    }
+
+    private void markFailed(AnalysisRequest req, String errorDetail) {
+        try {
+            req.setStatus("FAILED");
+            req.setErrorMessage(errorDetail);
+            req.setCompletedAt(OffsetDateTime.now());
+            analysisRequestRepository.save(req);
+        } catch (Exception e) {
+            log.error("[stream] failed to mark request as failed: {}", e.getMessage());
+        }
     }
 }
 
@@ -2231,7 +2593,7 @@ server.port=8080
 # ── Database ──────────────────────────────────────────────────────────────────
 spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/YtAdvisor}
 spring.datasource.username=${DB_USER:postgres}
-spring.datasource.password=${DB_PASSWORD:juniorjain}
+spring.datasource.password=${DB_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # ── JPA ───────────────────────────────────────────────────────────────────────
@@ -2240,22 +2602,21 @@ spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.format_sql=false
 
 # ── Flyway ────────────────────────────────────────────────────────────────────
-# spring.flyway.enabled=true
-# spring.flyway.locations=classpath:db/migration
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
 # spring.jpa.defer-datasource-initialization=true
 # # spring.flyway.baseline-on-migrate=true
 # # spring.flyway.validate-on-migrate=true
 logging.level.org.flywaydb=DEBUG
 
 # ── OAuth2 Google ─────────────────────────────────────────────────────────────
-spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID:179465564896-5u2ght8c940oaidifiqa5etnbt8th86a.apps.googleusercontent.com}
-spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET: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}
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET}
 spring.security.oauth2.client.registration.google.scope=openid,email,profile
 
 # server.servlet.session.cookie.same-site=none
-server.servlet.session.cookie.secure=false
-server.address=localhost
-spring.security.oauth2.client.registration.google.redirect-uri=http://localhost:8080/login/oauth2/code/google
+server.servlet.session.cookie.secure=${SESSION_COOKIE_SECURE:false}
+spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/login/oauth2/code/google
 
 server.servlet.session.cookie.name=JSESSIONID
 server.servlet.session.cookie.http-only=true
@@ -2263,31 +2624,27 @@ server.servlet.session.cookie.same-site=lax
 spring.session.store-type=none
 
 # ── App ───────────────────────────────────────────────────────────────────────
-app.jwt-secret=${JWT_SECRET: pqrb3494b903rjrigj024b3nbmdfls394g3gbhvqgi97qhgb3evb0}
+app.jwt-secret=${JWT_SECRET}
 app.jwt-expiry-ms=86400000
 app.python-base-url=${PYTHON_BASE_URL:http://localhost:8000}
 app.frontend-url=${FRONTEND_URL:http://localhost:5173}
+app.cookie-secure=${COOKIE_SECURE:false}
 
 # ── YouTube ───────────────────────────────────────────────────────────────────
-youtube.api-key=${YOUTUBE_API_KEY:AIzaSyCZyBCWI4W3HWUWs7llNZTawtKFonIDsk4}
+youtube.api-key=${YOUTUBE_API_KEY}
 
 
 // ==============================================================================
 // File: backend/src/test/java/com/YtAdvisor/backend/BackendApplicationTests.java
 // ==============================================================================
 
-package com.YtAdvisor.backend;
+// Removed as requested
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class BackendApplicationTests {
+// ==============================================================================
+// File: backend/src/test/java/com/YtAdvisor/backend/controllers/ControllerAuthenticationTest.java
+// ==============================================================================
 
-	@Test
-	void contextLoads() {
-	}
-
-}
+// Removed as requested
 
 

@@ -1,3 +1,5 @@
+import asyncio
+import json
 import os
 import sys
 import time
@@ -5,6 +7,7 @@ import traceback
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 
 env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -36,6 +39,7 @@ from analyst_agent import run_analyst_agent
 from strategist_agent import run_strategist_agent
 from optimizer_agent import run_optimizer_agent
 from audience_pipeline_scheduler import start_pipeline, get_pipeline_status, get_pipeline_dna_string, PipelinePhase
+import llm_client
 
 
 class AutoAnalyzeRequest(_BaseModel):
@@ -188,6 +192,90 @@ def analyze_auto(payload: AutoAnalyzeRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {str(e)}") from e
+
+
+@app.post("/api/v1/analyze/stream")
+async def analyze_auto_stream(payload: AutoAnalyzeRequest):
+    """
+    Streaming version of /api/v1/analyze/auto.
+    Returns text/event-stream so the frontend can show live progress.
+
+    SSE event types:
+      progress  — {"message": "..."}  emitted as each pipeline stage starts or a key rotates
+      result    — the full DimenziqAnalysisOutput JSON (same schema as /auto)
+      error     — {"message": "..."}  only emitted if the pipeline fails entirely
+
+    Design: the blocking LangGraph pipeline runs in asyncio.to_thread (Python's
+    threadpool). Progress events are bridged back to the asyncio event loop via
+    loop.call_soon_threadsafe — the standard FastAPI pattern for sync-to-async bridging.
+    If the client disconnects, the async generator receives CancelledError and the
+    threadpool task is cancelled.
+    """
+    loop = asyncio.get_running_loop()
+    q: asyncio.Queue = asyncio.Queue()
+
+    def _progress_cb(message: str) -> None:
+        # Called from sync pipeline threads — bridges safely into the asyncio queue.
+        loop.call_soon_threadsafe(
+            q.put_nowait,
+            {"event": "progress", "data": json.dumps({"message": message})}
+        )
+
+    def _run_pipeline() -> None:
+        """Blocking pipeline — runs in the threadpool via asyncio.to_thread."""
+        try:
+            llm_client.set_progress_callback(_progress_cb)
+            from pipeline_graph import pipeline_app
+            initial_state = {
+                "video_idea": payload.video_idea,
+                "creator_dna": payload.creator_dna,
+            }
+            state = pipeline_app.invoke(initial_state)
+            if state.get("error"):
+                loop.call_soon_threadsafe(
+                    q.put_nowait,
+                    {"event": "error", "data": json.dumps({
+                        "message": state["error"],
+                        "status_code": state.get("error_status_code", 500),
+                    })}
+                )
+            else:
+                loop.call_soon_threadsafe(
+                    q.put_nowait,
+                    {"event": "result", "data": state["output"].model_dump_json()}
+                )
+        except Exception as e:
+            traceback.print_exc()
+            loop.call_soon_threadsafe(
+                q.put_nowait,
+                {"event": "error", "data": json.dumps({"message": f"Pipeline failed: {str(e)}"})}
+            )
+        finally:
+            llm_client.clear_progress_callback()
+            loop.call_soon_threadsafe(q.put_nowait, None)  # sentinel — end the stream
+
+    async def _event_stream():
+        pipeline_task = asyncio.ensure_future(asyncio.to_thread(_run_pipeline))
+        try:
+            while True:
+                item = await q.get()
+                if item is None:
+                    break
+                yield f"event: {item['event']}\ndata: {item['data']}\n\n"
+        except asyncio.CancelledError:
+            # Client disconnected — cancel the threadpool task and stop streaming.
+            pipeline_task.cancel()
+            raise
+
+    return StreamingResponse(
+        _event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",   # disables Render/nginx buffering — critical for SSE
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @app.post("/api/v1/audience/pipeline/start", status_code=202)

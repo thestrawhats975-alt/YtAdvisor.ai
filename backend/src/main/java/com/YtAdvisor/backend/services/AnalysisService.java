@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.YtAdvisor.backend.entities.AnalysisRequest;
@@ -38,21 +38,36 @@ public class AnalysisService {
     private final PythonClient pythonClient;
     private final ObjectMapper objectMapper;
     private final TierService tierService;
+    // TransactionTemplate is auto-configured by Spring Boot when spring-boot-starter-data-jpa
+    // is present — no extra bean definition needed.
+    private final TransactionTemplate transactionTemplate;
 
-    @Transactional
+    /*
+     * NOT @Transactional — the previous @Transactional on this method held a DB
+     * connection open for the entire duration of callAutoAnalyze(), which can take
+     * up to 180 seconds. With a default HikariCP pool of 10, even a handful of
+     * concurrent analysis requests would exhaust all connections and freeze the app.
+     *
+     * Fix: each group of DB writes now runs in its own short TransactionTemplate
+     * block that commits immediately, freeing the connection back to the pool before
+     * the network call to Python begins.
+     */
     public JsonNode analyse(UUID userId, String videoIdea) {
-        // 1. Load user
+
+        // ── Step 1: Load user ─────────────────────────────────────────────────
+        // Simple read — Spring Data's built-in @Transactional(readOnly) handles it.
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found"));
 
-        // Check tier and consume request
+        // ── Step 2: Tier check ────────────────────────────────────────────────
+        // TierService.checkAndConsumeRequest is @Transactional, so it opens and
+        // commits its own short transaction. No outer transaction wraps it.
         tierService.checkAndConsumeRequest(user);
 
-        // 2. Load channel and latest reliable DNA (if available)
+        // ── Step 3: Load channel and latest reliable DNA ──────────────────────
         Channel channel = channelRepository.findByUser_Id(userId).orElse(null);
         String creatorDna = null;
-
         if (channel != null) {
             DnaSnapshot snap = dnaSnapshotRepository
                     .findTopByChannel_IdOrderByCreatedAtDesc(channel.getId())
@@ -63,59 +78,75 @@ public class AnalysisService {
             }
         }
 
-        // 3. Save request as PROCESSING
-        AnalysisRequest analysisRequest = new AnalysisRequest();
-        analysisRequest.setUser(user);
-        analysisRequest.setChannel(channel);
-        analysisRequest.setVideoIdea(videoIdea);
-        analysisRequest.setCreatorDnaUsed(creatorDna);
-        analysisRequest.setStatus("PROCESSING");
-        analysisRequest = analysisRequestRepository.save(analysisRequest);
+        // ── Step 4: Persist PROCESSING record ────────────────────────────────
+        // TransactionTemplate opens a transaction, saves, and commits immediately.
+        // The DB connection is returned to the pool before we call Python.
+        final Channel finalChannel = channel;
+        final String finalCreatorDna = creatorDna;
+        final AnalysisRequest analysisRequest = transactionTemplate.execute(status -> {
+            AnalysisRequest req = new AnalysisRequest();
+            req.setUser(user);
+            req.setChannel(finalChannel);
+            req.setVideoIdea(videoIdea);
+            req.setCreatorDnaUsed(finalCreatorDna);
+            req.setStatus("PROCESSING");
+            return analysisRequestRepository.save(req);
+        });
 
-        // 4. Call Python
+        // ── Step 5: Call Python ───────────────────────────────────────────────
+        // No database connection is held here. This call can take 60–180 seconds.
         JsonNode rawJson;
         try {
             String rawString = pythonClient.callAutoAnalyze(videoIdea, creatorDna);
             rawJson = objectMapper.readTree(rawString);
         } catch (Exception e) {
             log.error("[analysis] Python call failed: {}", e.getMessage());
-            analysisRequest.setStatus("FAILED");
-            analysisRequest.setErrorMessage(e.getMessage());
-            analysisRequest.setCompletedAt(OffsetDateTime.now());
-            analysisRequestRepository.save(analysisRequest);
+            // Short transaction just to mark the record as FAILED, then release.
+            transactionTemplate.execute(status -> {
+                analysisRequest.setStatus("FAILED");
+                analysisRequest.setErrorMessage(e.getMessage());
+                analysisRequest.setCompletedAt(OffsetDateTime.now());
+                return analysisRequestRepository.save(analysisRequest);
+            });
             throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY, "Analysis service error: " + e.getMessage());
         }
 
-        // 5. Persist full response
-        String rawStr;
-        try {
-            rawStr = objectMapper.writeValueAsString(rawJson);
-        } catch (JsonProcessingException e) {
-            rawStr = "{}";
-        }
+        // ── Step 6: Persist result and mark COMPLETED ─────────────────────────
+        // Another short transaction — response save + analytics + status update,
+        // all committed atomically, connection released immediately after.
+        final JsonNode finalRawJson = rawJson;
+        transactionTemplate.execute(status -> {
+            String rawStr;
+            try {
+                rawStr = objectMapper.writeValueAsString(finalRawJson);
+            } catch (JsonProcessingException ex) {
+                rawStr = "{}";
+            }
 
-        AnalysisResponse analysisResponse = new AnalysisResponse();
-        analysisResponse.setRequest(analysisRequest);
-        analysisResponse.setRawResponse(rawStr);
-        analysisResponse.setFinalVerdict(
-                rawJson.path("verdict").path("final_verdict").asText(null));
-        analysisResponse.setConfidence(
-                rawJson.path("verdict").path("confidence").asText(null));
-        analysisResponse.setSmallCreatorVerdict(
-                rawJson.path("market").path("small_creator_verdict").asText(null));
-        analysisResponseRepository.save(analysisResponse);
+            AnalysisResponse analysisResponse = new AnalysisResponse();
+            analysisResponse.setRequest(analysisRequest);
+            analysisResponse.setRawResponse(rawStr);
+            analysisResponse.setFinalVerdict(
+                    finalRawJson.path("verdict").path("final_verdict").asText(null));
+            analysisResponse.setConfidence(
+                    finalRawJson.path("verdict").path("confidence").asText(null));
+            analysisResponse.setSmallCreatorVerdict(
+                    finalRawJson.path("market").path("small_creator_verdict").asText(null));
+            analysisResponseRepository.save(analysisResponse);
 
-        // Record usage for tier limits
-        tierService.recordAnalysisRun(user);
+            // recordAnalysisRun is @Transactional(REQUIRED) — joins the current tx.
+            tierService.recordAnalysisRun(user);
 
-        // 6. Mark request complete
-        analysisRequest.setStatus("COMPLETED");
-        analysisRequest.setCompletedAt(OffsetDateTime.now());
-        analysisRequestRepository.save(analysisRequest);
+            analysisRequest.setStatus("COMPLETED");
+            analysisRequest.setCompletedAt(OffsetDateTime.now());
+            analysisRequestRepository.save(analysisRequest);
 
-        log.info("[analysis] completed for userId={}, verdict={}",
-                userId, analysisResponse.getFinalVerdict());
+            log.info("[analysis] completed for userId={}, verdict={}",
+                    userId, analysisResponse.getFinalVerdict());
+
+            return null;
+        });
 
         return rawJson;
     }

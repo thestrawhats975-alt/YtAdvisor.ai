@@ -1,25 +1,27 @@
 package com.YtAdvisor.backend.configurations;
 
-import javax.sql.DataSource;
-
-import org.flywaydb.core.Flyway;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
+/*
+ * This file is intentionally left as a no-op class.
+ *
+ * WHY IT WAS REMOVED:
+ * The original @Configuration + @Bean(initMethod = "migrate") caused Flyway
+ * to run migrations TWICE on startup:
+ *   1. Via this custom bean's initMethod
+ *   2. Via Spring Boot's own FlywayAutoConfiguration (triggered by spring.flyway.enabled=true)
+ *
+ * This created a race condition on the flyway_schema_history lock table at boot time.
+ *
+ * FIX:
+ * Flyway is now fully managed by Spring Boot's autoconfiguration. All settings
+ * (locations, baselineOnMigrate, validateOnMigrate, etc.) are configured through
+ * application.properties using the spring.flyway.* namespace — no code needed.
+ *
+ * To add or tune Flyway behaviour, edit application.properties:
+ *   spring.flyway.enabled=true
+ *   spring.flyway.locations=classpath:db/migration
+ *   spring.flyway.baseline-on-migrate=false
+ *   spring.flyway.validate-on-migrate=true
+ */
 public class FlywayConfig {
-
-    @Value("${spring.flyway.locations:classpath:db/migration}")
-    private String[] locations;
-
-    @Bean(initMethod = "migrate")
-    public Flyway flyway(DataSource dataSource) {
-        return Flyway.configure()
-                .dataSource(dataSource)
-                .locations(locations)
-                .baselineOnMigrate(false)
-                .validateOnMigrate(true)
-                .load();
-    }
+    // Intentionally empty — Spring Boot autoconfiguration handles Flyway.
 }

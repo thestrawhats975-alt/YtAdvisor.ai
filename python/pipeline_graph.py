@@ -86,6 +86,7 @@ from api_models import (
     RetentionTrap,
     NextVideoIdea,
 )
+from llm_client import emit_progress
 from llm_service import expand_idea_to_queries
 from competitor_scraper import (
     scrape_competitor_intelligence,
@@ -129,6 +130,7 @@ def _analyst_graph_view(mg) -> SimpleNamespace:
 # ── Nodes ────────────────────────────────────────────────────────────
 
 def expand_queries_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Expanding video idea into search queries...")
     try:
         queries = expand_idea_to_queries(state["video_idea"])
         if not queries:
@@ -140,6 +142,7 @@ def expand_queries_node(state: PipelineState) -> Dict[str, Any]:
 
 
 def scrape_competitors_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Scraping competitor data from YouTube...")
     youtube_api_key = os.getenv("YOUTUBE_API_KEY")
     if not youtube_api_key:
         return {
@@ -164,16 +167,19 @@ def scrape_competitors_node(state: PipelineState) -> Dict[str, Any]:
 
 
 def analyze_market_graph_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Analyzing market structure and competition graph...")
     graph_signals = analyse_market_graph(state["intel"])
     return {"graph_signals": graph_signals}
 
 
 def analyze_thumbnails_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Analyzing competitor thumbnails...")
     thumbnail_analysis = analyse_thumbnails(state["intel"].top_thumbnail_urls)
     return {"thumbnail_analysis": thumbnail_analysis}
 
 
 def build_context_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Building analysis context...")
     competitor_data = intelligence_to_competitor_data(state["intel"])
     median_subs = get_median_subscriber_count(state["intel"])
     
@@ -191,6 +197,7 @@ def build_context_node(state: PipelineState) -> Dict[str, Any]:
 
 
 def analyst_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Running market analyst agent...")
     graph_for_analyst = _analyst_graph_view(state["graph_signals"])
     analyst_result = run_analyst_agent(
         state["agent_context"],
@@ -201,6 +208,7 @@ def analyst_node(state: PipelineState) -> Dict[str, Any]:
 
 
 def strategist_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Running strategy agent...")
     strategist_result = run_strategist_agent(
         state["agent_context"],
         state["analyst_output"],
@@ -210,6 +218,7 @@ def strategist_node(state: PipelineState) -> Dict[str, Any]:
 
 
 def optimizer_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Running optimization agent...")
     optimizer_result = run_optimizer_agent(
         state["agent_context"],
         state["analyst_output"],
@@ -219,6 +228,7 @@ def optimizer_node(state: PipelineState) -> Dict[str, Any]:
 
 
 def assemble_output_node(state: PipelineState) -> Dict[str, Any]:
+    emit_progress("Assembling final report...")
     analyst_result = state["analyst_output"]
     strategist_result = state["strategist_output"]
     optimizer_result = state["optimizer_output"]
