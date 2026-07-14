@@ -18,15 +18,18 @@ import com.YtAdvisor.backend.repositories.UserRepository;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TierService {
 
-    private static final int FREE_LIMIT    = 2;
-    private static final int PRO_LIMIT     = 7;
-    // ULTIMATE has no limit
+    @Value("${app.free-limit:50}")
+    private int freeLimit;
+
+    @Value("${app.pro-limit:100}")
+    private int proLimit;
 
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -47,7 +50,7 @@ public class TierService {
             return;
         }
 
-        int limit = user.getTier() == UserTier.PRO ? PRO_LIMIT : FREE_LIMIT;
+        int limit = user.getTier() == UserTier.PRO ? proLimit : freeLimit;
 
         if (user.getRequestsThisWeek() >= limit) {
             throw new ResponseStatusException(
