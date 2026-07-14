@@ -79,6 +79,10 @@ app.add_middleware(
 def health():
     return {"status": "ok", "product": "Dimenziq", "version": "2.0.0"}
 
+@app.get("/api/health")
+def api_health():
+    return {"status": "UP", "timestamp": str(time.time()), "product": "Dimenziq"}
+
 @app.post("/api/v1/analyze", response_model=DimenziqAnalysisOutput)
 def analyze(payload: AgentContext):
     try:

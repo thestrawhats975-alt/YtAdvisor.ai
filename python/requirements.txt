@@ -11,3 +11,4 @@ fastapi
 uvicorn
 langgraph-checkpoint-postgres
 psycopg[pool]
+psycopg-binary
