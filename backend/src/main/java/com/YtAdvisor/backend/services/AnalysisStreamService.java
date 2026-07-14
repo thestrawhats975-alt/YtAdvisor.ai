@@ -5,6 +5,9 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.core.ParameterizedTypeReference;
@@ -85,7 +88,23 @@ public class AnalysisStreamService {
         SseEmitter emitter = new SseEmitter(300_000L);
         AtomicBoolean resultReceived = new AtomicBoolean(false);
 
-        // 6. Subscribe to Python's SSE stream on the bounded-elastic pool
+        // 6. Heartbeat — send an SSE comment every 15 s to prevent Render's load-balancer
+        //    from closing the idle connection during the ~70-second Python pipeline run.
+        ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
+        heartbeat.scheduleAtFixedRate(() -> {
+            try {
+                emitter.send(SseEmitter.event().comment("ping"));
+            } catch (Exception ex) {
+                heartbeat.shutdown();
+            }
+        }, 15, 15, TimeUnit.SECONDS);
+
+        // Shut down the heartbeat whenever the emitter lifecycle ends
+        emitter.onCompletion(heartbeat::shutdown);
+        emitter.onError(ex -> heartbeat.shutdown());
+        emitter.onTimeout(heartbeat::shutdown);
+
+        // 7. Subscribe to Python's SSE stream on the bounded-elastic pool
         //    (publishOn ensures JPA saves in callbacks run on a blocking-safe thread)
         pythonWebClient.post()
                 .uri("/api/v1/analyze/stream")
