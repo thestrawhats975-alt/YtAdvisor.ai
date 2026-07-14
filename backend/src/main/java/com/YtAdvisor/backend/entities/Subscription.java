@@ -35,7 +35,7 @@ public class Subscription {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "user_tier")
+    @Column(name = "tier", nullable = false)
     private UserTier tier;
 
     @Column(name = "started_at", nullable = false)

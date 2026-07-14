@@ -53,7 +53,7 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Channel channel;
 
-    @Column(nullable = false, columnDefinition = "user_tier")
+    @Column(name = "tier", nullable = false)
     @Enumerated(EnumType.STRING)
     private UserTier tier = UserTier.STARTER;
 
