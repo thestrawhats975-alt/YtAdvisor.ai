@@ -11,7 +11,7 @@ load_dotenv()
 
 TModel = TypeVar("TModel", bound=BaseModel)
 
-_MODEL_NAME = "gemini-2.0-flash-lite"
+_MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
 
 
 # ── API Key Pool ──────────────────────────────────────────────────────────────
