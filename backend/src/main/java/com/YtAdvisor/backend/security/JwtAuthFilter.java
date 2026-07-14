@@ -40,6 +40,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
     private String extractToken(HttpServletRequest request) {
         if (request.getCookies() == null) return null;
         return Arrays.stream(request.getCookies())
